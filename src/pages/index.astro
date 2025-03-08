@@ -9,6 +9,12 @@ const projects = [
     title: '基本の三角形',
     description: 'WebGPUを使用した最も基本的な三角形の描画デモです。頂点シェーダーとフラグメントシェーダーの基本を学びます。',
     thumbnail: '/images/triangle-thumbnail.svg',
+  },
+  {
+    id: 'gradient',
+    title: 'コンピュートシェーダグラデーション',
+    description: 'WebGPUのコンピュートシェーダを使用して、キャンバス全体にグラデーションを描画するデモです。',
+    thumbnail: '/images/triangle-thumbnail.svg', // 一時的に三角形のサムネイルを再利用
   }
 ];
 ---
@@ -31,7 +37,7 @@ const projects = [
             title={project.title}
             description={project.description}
             thumbnail={project.thumbnail}
-            url={`/projects/triangle`}
+            url={`/projects/${project.id}`}
           />
         ))}
       </div>
