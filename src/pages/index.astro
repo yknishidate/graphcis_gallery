@@ -1,11 +1,125 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// プロジェクト一覧データ
+const projects = [
+  {
+    id: 'triangle',
+    title: '基本の三角形',
+    description: 'WebGPUを使用した最も基本的な三角形の描画デモです。頂点シェーダーとフラグメントシェーダーの基本を学びます。',
+    thumbnail: '/images/triangle-thumbnail.svg',
+  }
+];
 ---
 
 <Layout>
-	<Welcome />
+  <div class="container">
+    <section class="hero">
+      <h1>WebGPU デモギャラリー</h1>
+      <p class="subtitle">
+        WebGPUを使った様々なグラフィックスデモのコレクションです。
+        最新のWebブラウザでGPUの力を体験しましょう。
+      </p>
+    </section>
+
+    <section class="projects">
+      <h2>プロジェクト</h2>
+      <div class="project-grid">
+        {projects.map(project => (
+          <ProjectCard
+            title={project.title}
+            description={project.description}
+            thumbnail={project.thumbnail}
+            url={`/projects/triangle`}
+          />
+        ))}
+      </div>
+    </section>
+
+    <section class="about">
+      <h2>WebGPUについて</h2>
+      <p>
+        WebGPUは、最新のウェブブラウザで高性能なグラフィックスとコンピュートを実現するための新しいAPIです。
+        WebGLの後継として設計され、より低レベルな制御と高いパフォーマンスを提供します。
+      </p>
+      <p>
+        このデモギャラリーでは、WebGPUの基本から応用までの様々な例を紹介しています。
+        各プロジェクトのソースコードは<a href="https://github.com/yknishidate/webgpu_demo" target="_blank">GitHub</a>で公開されています。
+      </p>
+    </section>
+  </div>
 </Layout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 3rem 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, var(--accent-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    color: #b0b0c0;
+    line-height: 1.6;
+  }
+
+  .projects {
+    padding: 2rem 0;
+  }
+
+  .projects h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .about {
+    padding: 3rem 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .about h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about p {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    color: #b0b0c0;
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 {
+      font-size: 2.5rem;
+    }
+
+    .project-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
