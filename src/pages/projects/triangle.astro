@@ -1,5 +1,20 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+// @ts-ignore
+import fs from 'fs';
+// @ts-ignore
+import path from 'path';
+
+// シェーダファイルの読み込み
+// @ts-ignore
+const vertShaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.vert.wgsl');
+// @ts-ignore
+const fragShaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.frag.wgsl');
+
+// @ts-ignore
+const vertexShader = fs.readFileSync(vertShaderPath, 'utf-8');
+// @ts-ignore
+const fragmentShader = fs.readFileSync(fragShaderPath, 'utf-8');
 
 // プロジェクト情報
 const projectInfo = {
@@ -49,24 +64,12 @@ const id = 'triangle';
       <div>
         <h3>頂点シェーダー</h3>
         <div class="code-block">
-          <pre><code>@vertex
-fn main(@builtin(vertex_index) vertexIndex: u32) -&gt; @builtin(position) vec4f &#123;
-  let positions = array&lt;vec2f, 3&gt;(
-    vec2f(0.0, 0.5),
-    vec2f(-0.5, -0.5),
-    vec2f(0.5, -0.5)
-  );
-  
-  return vec4f(positions[vertexIndex], 0.0, 1.0);
-&#125;</code></pre>
+          <pre><code>{vertexShader}</code></pre>
         </div>
 
         <h3>フラグメントシェーダー</h3>
         <div class="code-block">
-          <pre><code>@fragment
-fn main() -&gt; @location(0) vec4f &#123;
-  return vec4f(0.4, 0.4, 1.0, 1.0);
-&#125;</code></pre>
+          <pre><code>{fragmentShader}</code></pre>
         </div>
       </div>
     </div>
