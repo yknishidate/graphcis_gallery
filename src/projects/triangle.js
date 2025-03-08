@@ -10,31 +10,25 @@ import {
 } from './webgpu-utils.js';
 
 // シェーダーモジュールの作成
-async function loadShaderModules(device) {
+async function loadShaderModule(device) {
   // シェーダーファイルの読み込み
-  const vertexShader = await loadShader('/shaders/triangle.vert.wgsl');
-  const fragmentShader = await loadShader('/shaders/triangle.frag.wgsl');
+  const shader = await loadShader('/shaders/triangle.wgsl');
 
   // シェーダーモジュールの作成
-  const vertexModule = createShaderModule(device, vertexShader);
-  const fragmentModule = createShaderModule(device, fragmentShader);
-
-  return { vertexModule, fragmentModule };
+  return createShaderModule(device, shader);
 }
 
 // レンダリングパイプラインの作成
-function createRenderPipeline(device, format, shaderModules) {
-  const { vertexModule, fragmentModule } = shaderModules;
-
+function createRenderPipeline(device, format, shaderModule) {
   const pipelineDescriptor = {
     layout: 'auto',
     vertex: {
-      module: vertexModule,
-      entryPoint: 'main',
+      module: shaderModule,
+      entryPoint: 'vs_main',
     },
     fragment: {
-      module: fragmentModule,
-      entryPoint: 'main',
+      module: shaderModule,
+      entryPoint: 'fs_main',
       targets: [
         {
           format: format,
@@ -75,10 +69,10 @@ export async function initTriangleDemo(canvasId) {
     const { device, context, format } = await initWebGPU(canvas);
 
     // シェーダーモジュールの作成
-    const shaderModules = await loadShaderModules(device);
+    const shaderModule = await loadShaderModule(device);
 
     // レンダリングパイプラインの作成
-    const pipeline = createRenderPipeline(device, format, shaderModules);
+    const pipeline = createRenderPipeline(device, format, shaderModule);
 
     // レンダリング
     render(device, context, pipeline);

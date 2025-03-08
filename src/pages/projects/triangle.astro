@@ -7,14 +7,10 @@ import path from 'path';
 
 // シェーダファイルの読み込み
 // @ts-ignore
-const vertShaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.vert.wgsl');
-// @ts-ignore
-const fragShaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.frag.wgsl');
+const shaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.wgsl');
 
 // @ts-ignore
-const vertexShader = fs.readFileSync(vertShaderPath, 'utf-8');
-// @ts-ignore
-const fragmentShader = fs.readFileSync(fragShaderPath, 'utf-8');
+const shader = fs.readFileSync(shaderPath, 'utf-8');
 
 // プロジェクト情報
 const projectInfo = {
@@ -62,14 +58,9 @@ const id = 'triangle';
     <div class="code-section">
       <h2>コードの解説</h2>
       <div>
-        <h3>頂点シェーダー</h3>
+        <h3>シェーダー</h3>
         <div class="code-block">
-          <pre><code class="language-wgsl">{vertexShader}</code></pre>
-        </div>
-
-        <h3>フラグメントシェーダー</h3>
-        <div class="code-block">
-          <pre><code class="language-wgsl">{fragmentShader}</code></pre>
+          <pre><code class="language-wgsl">{shader}</code></pre>
         </div>
       </div>
     </div>
