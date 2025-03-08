@@ -64,17 +64,39 @@ const id = 'triangle';
       <div>
         <h3>頂点シェーダー</h3>
         <div class="code-block">
-          <pre><code>{vertexShader}</code></pre>
+          <pre><code class="language-wgsl">{vertexShader}</code></pre>
         </div>
 
         <h3>フラグメントシェーダー</h3>
         <div class="code-block">
-          <pre><code>{fragmentShader}</code></pre>
+          <pre><code class="language-wgsl">{fragmentShader}</code></pre>
         </div>
       </div>
     </div>
   </div>
 </Layout>
+
+<!-- Prism.jsのスタイルシートとスクリプトを読み込む -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<!-- WGSLの言語定義を追加 -->
+<script is:inline>
+  // WGSLの言語定義（GLSLをベースに拡張）
+  Prism.languages.wgsl = {
+    'comment': /\/\/.*|\/\*[\s\S]*?\*\//,
+    'string': /"[^"]*"/,
+    'keyword': /\b(?:var|let|const|fn|return|struct|if|else|loop|break|continue|switch|case|default|for|while|discard|return|true|false|array|vec[234][iuf]?|mat[234]x[234]|sampler|texture|@vertex|@fragment|@compute|@builtin|@location|@group|@binding)\b/,
+    'number': /\b(?:0x[\da-f]+|(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)[iuf]?\b/i,
+    'operator': /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
+    'punctuation': /[{}[\];(),.:]/
+  };
+  
+  // ページ読み込み時にPrism.jsを実行
+  document.addEventListener('DOMContentLoaded', () => {
+    Prism.highlightAll();
+  });
+</script>
 
 <script define:vars={{ id, scriptPath: projectInfo.script }}>
 // WebGPUデモの初期化
