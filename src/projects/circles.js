@@ -71,10 +71,10 @@ export async function initCirclesDemo(canvasId) {
     });
     const colorsData = new Float32Array(numCircles * 4);
     for (let i = 0; i < numCircles; i++) {
-      colorsData[i * 4 + 0] = Math.random(); // r
-      colorsData[i * 4 + 1] = Math.random(); // g
-      colorsData[i * 4 + 2] = Math.random(); // b
-      colorsData[i * 4 + 3] = 1.0;           // a
+      colorsData[i * 4 + 0] = Math.random() * 0.5 + 0.5; // r
+      colorsData[i * 4 + 1] = Math.random() * 0.5 + 0.5; // g
+      colorsData[i * 4 + 2] = Math.random() * 0.5 + 0.5; // b
+      colorsData[i * 4 + 3] = 1.0;                       // a
     }
     new Float32Array(colorsBuffer.getMappedRange()).set(colorsData);
     colorsBuffer.unmap();
@@ -123,12 +123,7 @@ export async function initCirclesDemo(canvasId) {
       device.queue.submit([commandEncoder.finish()]);
 
       // 円を描画
-      shapeRenderer.renderCirclesWithColorBuffer(
-        centersBuffer, 
-        colorsBuffer,
-        circleRadius, 
-        numCircles
-      );
+      shapeRenderer.renderCircles(centersBuffer, circleRadius, colorsBuffer, numCircles);
     }
 
     // アニメーションループのセットアップ

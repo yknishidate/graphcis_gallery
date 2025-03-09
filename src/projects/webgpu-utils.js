@@ -452,7 +452,11 @@ export class ShapeRenderer {
     }
   }
 
-  // 単一色の円を描画するメソッド
+  // 円を描画するメソッド（単一色またはカラーバッファに対応）
+  // centersBuffer: インスタンスの中心座標を格納したバッファ
+  // radius: 円の半径
+  // color: 単一色([r, g, b, a])またはカラーバッファ
+  // instanceCount: 描画するインスタンス数
   renderCircles(centersBuffer, radius, color, instanceCount) {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
@@ -461,14 +465,21 @@ export class ShapeRenderer {
     const canvas = this.#context.canvas;
     const aspectRatio = canvas.width / canvas.height;
 
+    // カラーバッファかどうかを判定
+    const isColorBuffer = color instanceof GPUBuffer;
+
     // uniformバッファにデータを書き込む
     this.#device.queue.writeBuffer(
       this.#uniformBuffer, 
       0, 
       new Float32Array([
         radius, 0, 0, 0,  // radius (vec4fの最初の要素)
-        color[0], color[1], color[2], color[3],  // color
-        0, aspectRatio, 0, 0,  // useColorBuffer (0 = false)
+        isColorBuffer ? 1.0 : color[0],  // color
+        isColorBuffer ? 1.0 : color[1],
+        isColorBuffer ? 1.0 : color[2],
+        isColorBuffer ? 1.0 : color[3],
+        isColorBuffer ? 1 : 0,  // useColorBuffer
+        aspectRatio, 0, 0
       ])
     );
 
@@ -478,56 +489,12 @@ export class ShapeRenderer {
       entries: [
         { binding: 0, resource: { buffer: this.#uniformBuffer } },
         { binding: 1, resource: { buffer: centersBuffer } },
-        { binding: 2, resource: { buffer: this.#dummyColorsBuffer } }
-      ]
-    });
-
-    // レンダーパスの開始
-    const renderPass = commandEncoder.beginRenderPass({
-      colorAttachments: [{
-        view: this.#context.getCurrentTexture().createView(),
-        clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
-        loadOp: 'clear',
-        storeOp: 'store'
-      }]
-    });
-
-    renderPass.setPipeline(this.#pipeline);
-    renderPass.setVertexBuffer(0, this.#vertexBuffer);
-    renderPass.setBindGroup(0, bindGroup);
-    renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
-    renderPass.end();
-
-    this.#device.queue.submit([commandEncoder.finish()]);
-  }
-
-  // カラーバッファを使用して円を描画するメソッド
-  renderCirclesWithColorBuffer(centersBuffer, colorsBuffer, radius, instanceCount) {
-    // コマンドエンコーダの作成
-    const commandEncoder = this.#device.createCommandEncoder();
-
-    // キャンバスのアスペクト比を計算
-    const canvas = this.#context.canvas;
-    const aspectRatio = canvas.width / canvas.height;
-
-    // uniformバッファにデータを書き込む
-    this.#device.queue.writeBuffer(
-      this.#uniformBuffer, 
-      0, 
-      new Float32Array([
-        radius, 0, 0, 0,  // radius (vec4fの最初の要素)
-        1.0, 1.0, 1.0, 1.0,  // デフォルトカラー（使用されない）
-        1, aspectRatio, 0, 0,  // useColorBuffer (1 = true)
-      ])
-    );
-
-    // バインドグループの作成
-    const bindGroup = this.#device.createBindGroup({
-      layout: this.#pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: this.#uniformBuffer } },
-        { binding: 1, resource: { buffer: centersBuffer } },
-        { binding: 2, resource: { buffer: colorsBuffer } }
+        { 
+          binding: 2, 
+          resource: { 
+            buffer: isColorBuffer ? color : this.#dummyColorsBuffer 
+          } 
+        }
       ]
     });
 
