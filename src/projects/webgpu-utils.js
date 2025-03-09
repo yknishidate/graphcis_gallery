@@ -1,5 +1,136 @@
 // WebGPU ユーティリティ関数
 
+// フルスクリーン四角形の頂点シェーダコード
+const fullscreenQuadVertexShaderCode = `
+@vertex
+fn main(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 6>(
+    vec2f(-1.0, -1.0),
+    vec2f(1.0, -1.0),
+    vec2f(-1.0, 1.0),
+    vec2f(-1.0, 1.0),
+    vec2f(1.0, -1.0),
+    vec2f(1.0, 1.0)
+  );
+  
+  return vec4f(pos[vertexIndex], 0.0, 1.0);
+}
+`;
+
+// フルスクリーンテクスチャ描画用のフラグメントシェーダコード
+function createFullscreenTextureFragmentShaderCode(canvasWidth, canvasHeight) {
+  return `
+  @group(0) @binding(0) var textureSampler: sampler;
+  @group(0) @binding(1) var textureData: texture_2d<f32>;
+
+  @fragment
+  fn main(@builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
+    let texCoord = vec2f(fragCoord.x / ${canvasWidth}.0, 1.0 - fragCoord.y / ${canvasHeight}.0);
+    return textureSample(textureData, textureSampler, texCoord);
+  }
+  `;
+}
+
+// フルスクリーン四角形描画用のパイプラインとリソースを作成
+export function createFullscreenQuadPipeline(device, format, canvas) {
+  // シェーダーモジュールを作成
+  const vertexModule = createShaderModule(device, fullscreenQuadVertexShaderCode);
+  const fragmentModule = createShaderModule(
+    device, 
+    createFullscreenTextureFragmentShaderCode(canvas.width, canvas.height)
+  );
+  
+  // サンプラーを作成
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+  });
+  
+  // バインドグループレイアウトを作成
+  const bindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: {},
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {},
+      },
+    ],
+  });
+  
+  // レンダリングパイプラインを作成
+  const pipeline = device.createRenderPipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    }),
+    vertex: {
+      module: vertexModule,
+      entryPoint: 'main',
+    },
+    fragment: {
+      module: fragmentModule,
+      entryPoint: 'main',
+      targets: [
+        {
+          format: format,
+        },
+      ],
+    },
+    primitive: {
+      topology: 'triangle-list',
+    },
+  });
+  
+  return { pipeline, bindGroupLayout, sampler };
+}
+
+// テクスチャをフルスクリーンで描画
+export function renderFullscreenTexture(device, context, texture, pipeline, bindGroupLayout, sampler) {
+  // コマンドエンコーダの作成
+  const commandEncoder = device.createCommandEncoder();
+  
+  // バインドグループを作成
+  const bindGroup = device.createBindGroup({
+    layout: bindGroupLayout,
+    entries: [
+      {
+        binding: 0,
+        resource: sampler,
+      },
+      {
+        binding: 1,
+        resource: texture.createView(),
+      },
+    ],
+  });
+  
+  // レンダーパスの開始
+  const renderPassDescriptor = {
+    colorAttachments: [
+      {
+        view: context.getCurrentTexture().createView(),
+        loadOp: 'clear',
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+        storeOp: 'store',
+      },
+    ],
+  };
+  
+  // レンダーパスを使用してテクスチャを描画
+  const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
+  renderPass.setPipeline(pipeline);
+  renderPass.setBindGroup(0, bindGroup);
+  renderPass.draw(6); // 2つの三角形で四角形を描画（6頂点）
+  renderPass.end();
+  
+  // コマンドの実行
+  submitCommands(device, commandEncoder);
+}
+
 // WebGPUデバイスの初期化
 export async function initWebGPU(canvas) {
   // WebGPUがサポートされているか確認

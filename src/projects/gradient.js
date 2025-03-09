@@ -7,7 +7,9 @@ import {
   displayError, 
   beginRenderPass, 
   submitCommands,
-  setupAnimationLoop
+  setupAnimationLoop,
+  createFullscreenQuadPipeline,
+  renderFullscreenTexture
 } from './webgpu-utils.js';
 
 // グローバル変数（リソース管理用）
@@ -16,26 +18,9 @@ let computeShaderModule;
 let computePipeline;
 let bindGroupLayout;
 let outputTexture;
-let sampler;
 let renderPipeline;
 let renderBindGroupLayout;
-
-// 頂点シェーダコード
-const vertexShaderCode = `
-@vertex
-fn main(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f {
-  var pos = array<vec2f, 6>(
-    vec2f(-1.0, -1.0),
-    vec2f(1.0, -1.0),
-    vec2f(-1.0, 1.0),
-    vec2f(-1.0, 1.0),
-    vec2f(1.0, -1.0),
-    vec2f(1.0, 1.0)
-  );
-  
-  return vec4f(pos[vertexIndex], 0.0, 1.0);
-}
-`;
+let renderSampler;
 
 // Compute Shaderの実行とレンダリング
 async function runComputeShader(device, context, canvas, currentTime = 0) {
@@ -67,27 +52,11 @@ async function initializeResources(device, format, canvas) {
   const computeShaderCode = await loadShader('/shaders/gradient.comp.wgsl');
   computeShaderModule = createShaderModule(device, computeShaderCode);
   
-  // フラグメントシェーダのコード（キャンバスサイズを動的に設定）
-  const fragmentShaderCode = `
-  @group(0) @binding(0) var textureSampler: sampler;
-  @group(0) @binding(1) var textureData: texture_2d<f32>;
-
-  @fragment
-  fn main(@builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
-    let texCoord = vec2f(fragCoord.x / ${canvas.width}.0, 1.0 - fragCoord.y / ${canvas.height}.0);
-    return textureSample(textureData, textureSampler, texCoord);
-  }
-  `;
-  
-  // レンダリング用のシェーダーモジュールを作成
-  const vertexModule = createShaderModule(device, vertexShaderCode);
-  const fragmentModule = createShaderModule(device, fragmentShaderCode);
-  
-  // サンプラーを作成
-  sampler = device.createSampler({
-    magFilter: 'linear',
-    minFilter: 'linear',
-  });
+  // フルスクリーン描画用のパイプラインとリソースを作成
+  const { pipeline, bindGroupLayout: renderBindGroup, sampler } = createFullscreenQuadPipeline(device, format, canvas);
+  renderPipeline = pipeline;
+  renderBindGroupLayout = renderBindGroup;
+  renderSampler = sampler;
   
   // 時間用のユニフォームバッファを作成
   timeBuffer = device.createBuffer({
@@ -137,44 +106,6 @@ async function initializeResources(device, format, canvas) {
     },
   });
   
-  // レンダリング用のバインドグループレイアウトを作成
-  renderBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.FRAGMENT,
-        sampler: {},
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.FRAGMENT,
-        texture: {},
-      },
-    ],
-  });
-  
-  // レンダリングパイプラインを作成
-  renderPipeline = device.createRenderPipeline({
-    layout: device.createPipelineLayout({
-      bindGroupLayouts: [renderBindGroupLayout],
-    }),
-    vertex: {
-      module: vertexModule,
-      entryPoint: 'main',
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: 'main',
-      targets: [
-        {
-          format: format,
-        },
-      ],
-    },
-    primitive: {
-      topology: 'triangle-list',
-    },
-  });
 }
 
 // キャンバスサイズ変更時のリソース更新
@@ -225,42 +156,11 @@ function executeComputeAndRender(device, context) {
   computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY);
   computePass.end();
   
-  // レンダリング用のバインドグループを作成
-  const renderBindGroup = device.createBindGroup({
-    layout: renderBindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: sampler,
-      },
-      {
-        binding: 1,
-        resource: outputTexture.createView(),
-      },
-    ],
-  });
-  
-  // レンダーパスの開始
-  const renderPassDescriptor = {
-    colorAttachments: [
-      {
-        view: context.getCurrentTexture().createView(),
-        loadOp: 'clear',
-        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-        storeOp: 'store',
-      },
-    ],
-  };
-  
-  // レンダーパスを使用してテクスチャを描画
-  const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
-  renderPass.setPipeline(renderPipeline);
-  renderPass.setBindGroup(0, renderBindGroup);
-  renderPass.draw(6); // 2つの三角形で四角形を描画（6頂点）
-  renderPass.end();
-  
   // コマンドの実行
   submitCommands(device, commandEncoder);
+  
+  // テクスチャをフルスクリーンで描画
+  renderFullscreenTexture(device, context, outputTexture, renderPipeline, renderBindGroupLayout, renderSampler);
 }
 
 // メイン関数
