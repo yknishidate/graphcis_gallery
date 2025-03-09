@@ -19,7 +19,7 @@ export async function initCirclesDemo(canvasId) {
     // WebGPUの初期化
     const { device, context, format } = await initWebGPU(canvas);
 
-    const numCircles = 1024;
+    const numCircles = 256;
     const circleRadius = 0.025; // 正規化された座標系での半径
 
     // シェーダーの読み込み
@@ -31,29 +31,37 @@ export async function initCirclesDemo(canvasId) {
       layout: 'auto',
       compute: {
         module: shaderModule,
-        entryPoint: 'update_circles'
+        entryPoint: 'main'
       }
     });
 
-    // 円のデータを生成
-    const circleData = new Float32Array(numCircles * 5);
-    for (let i = 0; i < numCircles; i++) {
-      circleData[i * 4 + 0] = Math.random() * 2 - 1; // x position
-      circleData[i * 4 + 1] = Math.random() * 2 - 1; // y position
-      // circleData[i * 4 + 2] = (Math.random() - 0.5) * 0.01;  // x velocity
-      // circleData[i * 4 + 3] = (Math.random() - 0.5) * 0.01;  // y velocity
-      circleData[i * 4 + 2] = 0.0;  // x velocity
-      circleData[i * 4 + 3] = 0.0;  // y velocity
-    }
-
-    // ストレージバッファの作成
-    const circlesBuffer = device.createBuffer({
-      size: circleData.byteLength,
+    // centers用のバッファを作成
+    const centersBuffer = device.createBuffer({
+      size: numCircles * 2 * 4, // vec2f * numCircles
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true
     });
-    new Float32Array(circlesBuffer.getMappedRange()).set(circleData);
-    circlesBuffer.unmap();
+    const centersData = new Float32Array(numCircles * 2);
+    for (let i = 0; i < numCircles; i++) {
+      centersData[i * 2] = Math.random() * 2 - 1;     // x position
+      centersData[i * 2 + 1] = Math.random() * 2 - 1; // y position
+    }
+    new Float32Array(centersBuffer.getMappedRange()).set(centersData);
+    centersBuffer.unmap();
+
+    // velocity用のバッファを作成
+    const velocityBuffer = device.createBuffer({
+      size: numCircles * 2 * 4, // vec2f * numCircles
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true
+    });
+    const velocityData = new Float32Array(numCircles * 2);
+    for (let i = 0; i < numCircles; i++) {
+      velocityData[i * 2 + 0] = (Math.random() - 0.5);     // x velocity
+      velocityData[i * 2 + 1] = (Math.random() - 0.5); // y velocity
+    }
+    new Float32Array(velocityBuffer.getMappedRange()).set(velocityData);
+    velocityBuffer.unmap();
 
     // uniformバッファの作成
     const uniformBuffer = device.createBuffer({
@@ -66,12 +74,13 @@ export async function initCirclesDemo(canvasId) {
       layout: computePipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: uniformBuffer } },
-        { binding: 1, resource: { buffer: circlesBuffer } }
+        { binding: 1, resource: { buffer: centersBuffer } },
+        { binding: 2, resource: { buffer: velocityBuffer } }
       ]
     });
 
     // ShapeRendererの作成
-    const shapeRenderer = new ShapeRenderer(device, format, 'circle');
+    const shapeRenderer = new ShapeRenderer(device, context, format, 'circle');
 
     // リサイズオブザーバーのセットアップ
     setupResizeObserver(canvas, device);
@@ -95,29 +104,16 @@ export async function initCirclesDemo(canvasId) {
       computePass.setBindGroup(0, bindGroup);
       computePass.dispatchWorkgroups(Math.ceil(numCircles / 64));
       computePass.end();
-      
+
       device.queue.submit([commandEncoder.finish()]);
 
-      // インスタンスデータの準備
-      const instances = [];
-      for (let i = 0; i < numCircles; i++) {
-        instances.push({
-          center: [
-            circleData[i * 4], 
-            circleData[i * 4 + 1]
-          ],
-          radius: circleRadius,
-          color: [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        });
-      }
-
-      // インスタンスデータの更新と描画
-      shapeRenderer.render(context, instances);
+      // 円を描画
+      shapeRenderer.renderCircles(
+        centersBuffer, 
+        circleRadius, 
+        [1.0, 1.0, 1.0, 1.0], 
+        numCircles
+      );
     }
 
     // アニメーションループのセットアップ

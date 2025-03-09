@@ -266,16 +266,17 @@ export function setupAnimationLoop(callback) {
 // 形状インスタンス描画用のレンダラークラス
 export class ShapeRenderer {
   #device;
+  #context;
   #format;
   #pipeline;
   #bindGroupLayout;
   #vertexBuffer;
-  #instanceBuffer;
   #shapeType;
   #numCircleSegments = 32;
 
-  constructor(device, format, shapeType = 'circle') {
+  constructor(device, context, format, shapeType = 'circle') {
     this.#device = device;
+    this.#context = context;
     this.#format = format;
     this.#shapeType = shapeType;
 
@@ -291,22 +292,15 @@ export class ShapeRenderer {
     new Float32Array(this.#vertexBuffer.getMappedRange()).set(vertices);
     this.#vertexBuffer.unmap();
 
-    // インスタンスバッファの初期化（後で更新可能）
-    this.#instanceBuffer = device.createBuffer({
-      size: 1024 * 4 * 8, // 初期サイズ（必要に応じて動的に拡張可能）
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-
     // 頂点シェーダーコード
     const vertexShaderCode = `
     struct VertexInput {
       @location(0) position: vec2f,
     }
 
-    struct InstanceInput {
-      @location(1) translation: vec2f,
-      @location(2) scale: vec2f,
-      @location(3) color: vec4f,
+    struct Uniforms {
+      radius: f32,
+      color: vec4f,
     }
 
     struct VertexOutput {
@@ -314,19 +308,22 @@ export class ShapeRenderer {
       @location(0) color: vec4f,
     }
 
+    @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+    @group(0) @binding(1) var<storage, read> centers: array<vec2f>;
+
     @vertex
     fn main(
       vertex: VertexInput, 
-      instance: InstanceInput
+      @builtin(instance_index) instanceIndex: u32
     ) -> VertexOutput {
       var output: VertexOutput;
       
       // インスタンスの位置とスケールを適用
-      let scaledPos = vertex.position * instance.scale;
-      let worldPos = scaledPos + instance.translation;
+      let scaledPos = vertex.position * uniforms.radius;
+      let worldPos = scaledPos + centers[instanceIndex];
       
       output.position = vec4f(worldPos, 0.0, 1.0);
-      output.color = instance.color;
+      output.color = uniforms.color;
       
       return output;
     }
@@ -366,28 +363,6 @@ export class ShapeRenderer {
                 format: 'float32x2',
               }
             ]
-          },
-          // インスタンスバッファ
-          {
-            arrayStride: 4 * 8, // vec2f + vec2f + vec4f
-            stepMode: 'instance',
-            attributes: [
-              {
-                shaderLocation: 1,
-                offset: 0,
-                format: 'float32x2', // translation
-              },
-              {
-                shaderLocation: 2,
-                offset: 2 * 4,
-                format: 'float32x2', // scale
-              },
-              {
-                shaderLocation: 3,
-                offset: 4 * 4,
-                format: 'float32x4', // color
-              }
-            ]
           }
         ]
       },
@@ -410,7 +385,7 @@ export class ShapeRenderer {
   #generateShapeVertices(shapeType) {
     switch(shapeType) {
       case 'circle':
-        // 円のメッシュ（三角形ストリップ）
+        // 円のメッシュ（三角形リスト）
         const circleVertices = [];
 
         for (let i = 0; i < this.#numCircleSegments; i++) {
@@ -449,38 +424,51 @@ export class ShapeRenderer {
     }
   }
 
-  // インスタンスデータの更新と描画
-  render(context, instances, clearColor = { r: 0.1, g: 0.1, b: 0.15, a: 1.0 }) {
+  // 円を描画するメソッド
+  renderCircles(centersBuffer, radius, color, instanceCount) {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
+
+    // uniformバッファの作成
+    const uniformBuffer = this.#device.createBuffer({
+      size: 32, // vec4f (radius + color)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // uniformバッファにデータを書き込む
+    this.#device.queue.writeBuffer(
+      uniformBuffer, 
+      0, 
+      new Float32Array([
+        radius, 0, 0, 0,  // radius (vec4fの最初の要素)
+        color[0], color[1], color[2], color[3]  // color
+      ])
+    );
+
+    // バインドグループの作成
+    const bindGroup = this.#device.createBindGroup({
+      layout: this.#pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: uniformBuffer } },
+        { binding: 1, resource: { buffer: centersBuffer } }
+      ]
+    });
 
     // レンダーパスの開始
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [{
-        view: context.getCurrentTexture().createView(),
-        clearValue: clearColor,
+        view: this.#context.getCurrentTexture().createView(),
+        clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
         loadOp: 'clear',
         storeOp: 'store'
       }]
     });
 
-    // インスタンスデータをバッファに書き込む
-    this.#device.queue.writeBuffer(
-      this.#instanceBuffer, 
-      0, 
-      new Float32Array(instances.flatMap(instance => [
-        instance.center[0], instance.center[1], // translation
-        instance.radius, instance.radius,       // scale
-        instance.color[0], instance.color[1], instance.color[2], instance.color[3] // color
-      ]))
-    );
-
     renderPass.setPipeline(this.#pipeline);
     renderPass.setVertexBuffer(0, this.#vertexBuffer);
-    renderPass.setVertexBuffer(1, this.#instanceBuffer);
+    renderPass.setBindGroup(0, bindGroup);
     
     // 形状に応じて描画コマンドを変更
-    const instanceCount = instances.length;
     switch(this.#shapeType) {
       case 'circle':
         renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);

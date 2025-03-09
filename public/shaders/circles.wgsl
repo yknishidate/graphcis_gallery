@@ -1,7 +1,3 @@
-struct Circle {
-    position: vec2<f32>,
-    velocity: vec2<f32>,
-}
 
 struct Uniforms {
     screenSize: vec2<f32>,
@@ -10,28 +6,31 @@ struct Uniforms {
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
-@group(0) @binding(1) var<storage, read_write> circles: array<Circle>;
+@group(0) @binding(1) var<storage, read_write> centers: array<vec2<f32>>;
+@group(0) @binding(2) var<storage, read_write> velocities: array<vec2<f32>>;
 
 @compute @workgroup_size(64)
-fn update_circles(@builtin(global_invocation_id) global_id: vec3<u32>) {
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let index = global_id.x;
-    if (index >= arrayLength(&circles)) {
+    if (index >= arrayLength(&centers)) {
         return;
     }
 
-    var circle = circles[index];
+    var center = centers[index];
+    var velocity = velocities[index];
 
     // Update position
-    circle.position += circle.velocity * uniforms.deltaTime;
+    center += velocity * uniforms.deltaTime;
 
     // Bounce off screen boundaries
-    if (circle.position.x - uniforms.circleRadius < 0.0 || circle.position.x + uniforms.circleRadius > uniforms.screenSize.x) {
-        circle.velocity.x *= -1.0;
+    if (center.x - uniforms.circleRadius < 0.0 || center.x + uniforms.circleRadius > uniforms.screenSize.x) {
+        velocity.x *= -1.0;
     }
 
-    if (circle.position.y - uniforms.circleRadius < 0.0 || circle.position.y + uniforms.circleRadius > uniforms.screenSize.y) {
-        circle.velocity.y *= -1.0;
+    if (center.y - uniforms.circleRadius < 0.0 || center.y + uniforms.circleRadius > uniforms.screenSize.y) {
+        velocity.y *= -1.0;
     }
 
-    circles[index] = circle;
+    centers[index] = center;
+    velocities[index] = velocity;
 }
