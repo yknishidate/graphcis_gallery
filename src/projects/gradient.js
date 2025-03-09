@@ -7,8 +7,7 @@ import {
   displayError, 
   submitCommands,
   setupAnimationLoop,
-  createFullscreenQuadPipeline,
-  renderFullscreenTexture
+  FullscreenQuadRenderer
 } from './webgpu-utils.js';
 
 // グローバル変数（リソース管理用）
@@ -17,9 +16,7 @@ let computeShaderModule;
 let computePipeline;
 let bindGroupLayout;
 let outputTexture;
-let renderPipeline;
-let renderBindGroupLayout;
-let renderSampler;
+let quadRenderer; // フルスクリーン描画用のレンダラー
 
 // Compute Shaderの実行とレンダリング
 async function runComputeShader(device, context, canvas, currentTime = 0) {
@@ -33,6 +30,8 @@ async function runComputeShader(device, context, canvas, currentTime = 0) {
   // キャンバスサイズが変更された場合、出力テクスチャを再作成
   if (outputTexture.width !== canvas.width || outputTexture.height !== canvas.height) {
     updateCanvasResources(device, canvas);
+    // レンダラーのリサイズ
+    quadRenderer.resize(canvas);
   }
 
   // 時間値を更新
@@ -51,11 +50,8 @@ async function initializeResources(device, format, canvas) {
   const computeShaderCode = await loadShader('/shaders/gradient.wgsl');
   computeShaderModule = createShaderModule(device, computeShaderCode);
   
-  // フルスクリーン描画用のパイプラインとリソースを作成
-  const { pipeline, bindGroupLayout: renderBindGroup, sampler } = createFullscreenQuadPipeline(device, format, canvas);
-  renderPipeline = pipeline;
-  renderBindGroupLayout = renderBindGroup;
-  renderSampler = sampler;
+  // フルスクリーン描画用のレンダラーを作成
+  quadRenderer = new FullscreenQuadRenderer(device, format, canvas);
   
   // 時間用のユニフォームバッファを作成
   timeBuffer = device.createBuffer({
@@ -104,7 +100,6 @@ async function initializeResources(device, format, canvas) {
       entryPoint: 'main',
     },
   });
-  
 }
 
 // キャンバスサイズ変更時のリソース更新
@@ -158,8 +153,8 @@ function executeComputeAndRender(device, context) {
   // コマンドの実行
   submitCommands(device, commandEncoder);
   
-  // テクスチャをフルスクリーンで描画
-  renderFullscreenTexture(device, context, outputTexture, renderPipeline, renderBindGroupLayout, renderSampler);
+  // テクスチャをフルスクリーンで描画（簡潔になったレンダリング処理）
+  quadRenderer.render(context, outputTexture);
 }
 
 // メイン関数

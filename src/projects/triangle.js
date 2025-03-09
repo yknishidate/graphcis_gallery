@@ -77,11 +77,6 @@ export async function initTriangleDemo(canvasId) {
     // レンダリング
     render(device, context, pipeline);
 
-    // キャンバスのリサイズ処理
-    setupResizeObserver(canvas, device, () => {
-      render(device, context, pipeline);
-    });
-
     return { device, context, pipeline };
   } catch (error) {
     displayError(canvas, error.message);
