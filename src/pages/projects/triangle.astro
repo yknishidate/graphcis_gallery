@@ -1,11 +1,11 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import ProjectLayout from '../../components/ProjectLayout.astro';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 // シェーダファイルの読み込み
 const shaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.wgsl');
-const shader = await fs.readFile(shaderPath, 'utf-8');
+const shaderCode = await fs.readFile(shaderPath, 'utf-8');
 const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/triangle.js'), 'utf-8');
 
 // プロジェクト情報
@@ -20,249 +20,30 @@ export const projectInfo = {
 const id = 'triangle';
 ---
 
-<Layout>
-  <div class="container">
-    <div class="project-header">
-      <h1>{projectInfo.title}</h1>
-      <p class="description">{projectInfo.description}</p>
-      <a href="/" class="back-link">Back to Home</a>
-    </div>
-
-    <div class="demo-container">
-      <canvas id="webgpu-canvas"></canvas>
-      <div id="error-message" class="error-message"></div>
-    </div>
-
-    <div class="code-section">
-      <div class="code-tabs">
-        <div class="tab-buttons">
-          <button class="tab-button active" data-tab="shader">Shader</button>
-          <button class="tab-button" data-tab="script">Script</button>
-        </div>
-        <div class="tab-content">
-          <div class="tab-pane active" id="shader">
-            <pre><code class="language-wgsl">{shader}</code></pre>
-          </div>
-          <div class="tab-pane" id="script">
-            <pre><code class="language-javascript">{scriptCode}</code></pre>
-          </div>
-        </div>
-      </div>
+<ProjectLayout
+  title={projectInfo.title}
+  description={projectInfo.description}
+  id={id}
+  scriptPath={projectInfo.script}
+  shaderCode={shaderCode}
+  scriptCode={scriptCode}
+>
+  <div class="info-section">
+    <h2>About This Demo</h2>
+    <div>
+      <p>
+        This demo is the simplest example of drawing a basic triangle using WebGPU.
+        It consists of the following elements:
+      </p>
+      <ul>
+        <li><strong>Vertex Shader</strong>: Defines the position of each vertex of the triangle.</li>
+        <li><strong>Fragment Shader</strong>: Defines the color of the triangle.</li>
+        <li><strong>Rendering Pipeline</strong>: Combines shaders and rendering settings.</li>
+      </ul>
+      <p>
+        WebGPU is a modern graphics API that enables high-performance graphics processing in browsers.
+        This demo shows the basic usage of WebGPU.
+      </p>
     </div>
   </div>
-</Layout>
-
-<!-- Prism.jsのスタイルシートとスクリプトを読み込む -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
-<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-
-<!-- WGSLの言語定義を追加 -->
-<script is:inline>
-  // WGSLの言語定義（GLSLをベースに拡張）
-  Prism.languages.wgsl = {
-    'comment': /\/\/.*|\/\*[\s\S]*?\*\//,
-    'string': /"[^"]*"/,
-    'keyword': /\b(?:var|let|const|fn|return|struct|if|else|loop|break|continue|switch|case|default|for|while|discard|return|true|false|array|vec[234][iuf]?|mat[234]x[234]|sampler|texture|@vertex|@fragment|@compute|@builtin|@location|@group|@binding)\b/,
-    'number': /\b(?:0x[\da-f]+|(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)[iuf]?\b/i,
-    'operator': /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
-    'punctuation': /[{}[\];(),.:]/
-  };
-  
-  // タブ切り替え処理
-  document.addEventListener('DOMContentLoaded', () => {
-    Prism.highlightAll();
-    
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    
-    tabButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const tabId = button.getAttribute('data-tab');
-        
-        // ボタンのアクティブ状態を切り替え
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        // タブペインのアクティブ状態を切り替え
-        tabPanes.forEach(pane => {
-          pane.classList.remove('active');
-          if (pane.id === tabId) {
-            pane.classList.add('active');
-          }
-        });
-      });
-    });
-  });
-</script>
-
-<script define:vars={{ id, scriptPath: projectInfo.script }}>
-// WebGPUデモの初期化
-async function initDemo() {
-  try {
-    const canvas = document.getElementById('webgpu-canvas');
-    
-    // キャンバスのサイズを設定
-    const demoContainer = document.querySelector('.demo-container');
-    canvas.width = demoContainer.clientWidth;
-    canvas.height = 400;
-
-    // WebGPUのサポートチェック
-    if (!navigator.gpu) {
-      throw new Error('WebGPUはこのブラウザでサポートされていません。Chrome 113以降またはその他の対応ブラウザをお使いください。');
-    }
-
-    // プロジェクト固有のスクリプトを動的にインポート
-    const module = await import(scriptPath);
-    
-    if (id === 'triangle') {
-      await module.initTriangleDemo('webgpu-canvas');
-    }
-  } catch (error) {
-    console.error('デモの初期化エラー:', error);
-    
-    // エラーメッセージを表示
-    const errorElement = document.getElementById('error-message');
-    errorElement.textContent = `エラー: ${error.message}`;
-    errorElement.style.display = 'block';
-    
-    // キャンバスを非表示
-    const canvas = document.getElementById('webgpu-canvas');
-    canvas.style.display = 'none';
-  }
-}
-
-// ページ読み込み時にデモを初期化
-document.addEventListener('DOMContentLoaded', initDemo);
-</script>
-
-<style>
-  .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-
-  .project-header {
-    padding: 2rem 0;
-    text-align: center;
-  }
-
-  .project-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    background: linear-gradient(to right, var(--accent-color), var(--secondary-color));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .description {
-    font-size: 1.1rem;
-    color: #b0b0c0;
-    max-width: 700px;
-    margin: 0 auto 1.5rem;
-    line-height: 1.6;
-  }
-
-  .back-link {
-    display: inline-block;
-    margin-top: 1rem;
-    color: var(--accent-color);
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .back-link:hover {
-    text-decoration: underline;
-  }
-
-  .demo-container {
-    background-color: rgba(20, 20, 30, 0.5);
-    border-radius: 12px;
-    padding: 1rem;
-    margin: 2rem 0;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  #webgpu-canvas {
-    width: 100%;
-    height: 400px;
-    display: block;
-    border-radius: 8px;
-    background-color: #1e1e2e;
-  }
-
-  .error-message {
-    display: none;
-    background-color: rgba(255, 107, 107, 0.1);
-    border-left: 4px solid #ff6b6b;
-    padding: 1rem;
-    margin: 1rem 0;
-    color: #ff6b6b;
-    border-radius: 0 8px 8px 0;
-  }
-
-  .info-section, .code-section {
-    margin: 3rem 0;
-  }
-
-  h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    color: var(--text-color);
-  }
-
-  h3 {
-    font-size: 1.3rem;
-    margin: 1.5rem 0 1rem;
-    color: var(--text-color);
-  }
-
-  p {
-    margin-bottom: 1rem;
-    line-height: 1.6;
-    color: #b0b0c0;
-  }
-
-  ul {
-    margin: 1rem 0;
-    padding-left: 1.5rem;
-    color: #b0b0c0;
-  }
-
-  li {
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-  }
-
-  pre {
-    background-color: rgba(30, 30, 40, 0.7);
-    border-radius: 8px;
-    padding: 1rem;
-    overflow-x: auto;
-    margin: 1rem 0;
-  }
-
-  code {
-    font-family: 'Fira Code', monospace;
-    font-size: 0.9rem;
-    color: #e0e0e0;
-  }
-
-  strong {
-    color: var(--accent-color);
-    font-weight: 600;
-  }
-
-  @media (max-width: 768px) {
-    .project-header h1 {
-      font-size: 2rem;
-    }
-
-    #webgpu-canvas {
-      height: 300px;
-    }
-  }
-</style>
+</ProjectLayout>
