@@ -286,7 +286,7 @@ export class ShapeRenderer {
     const vertices = this.#generateShapeVertices(shapeType);
 
     this.#uniformBuffer = this.#device.createBuffer({
-      size: 48, // vec4f (radius + color + useColorBuffer)
+      size: 48, // vec4f (radius + color + useColorBuffer + aspectRatio)
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
     
@@ -315,6 +315,7 @@ export class ShapeRenderer {
       radius: f32,
       color: vec4f,
       useColorBuffer: f32,
+      aspectRatio: f32,
     }
 
     struct VertexOutput {
@@ -333,8 +334,14 @@ export class ShapeRenderer {
     ) -> VertexOutput {
       var output: VertexOutput;
       
+      // アスペクト比を考慮した位置調整
+      var adjustedPos = vertex.position;
+      if (uniforms.aspectRatio > 0.0) {
+        adjustedPos.x /= uniforms.aspectRatio;
+      }
+      
       // インスタンスの位置とスケールを適用
-      let scaledPos = vertex.position * uniforms.radius;
+      let scaledPos = adjustedPos * uniforms.radius;
       let worldPos = scaledPos + centers[instanceIndex];
       
       output.position = vec4f(worldPos, 0.0, 1.0);
@@ -450,6 +457,10 @@ export class ShapeRenderer {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
 
+    // キャンバスのアスペクト比を計算
+    const canvas = this.#context.canvas;
+    const aspectRatio = canvas.width / canvas.height;
+
     // uniformバッファにデータを書き込む
     this.#device.queue.writeBuffer(
       this.#uniformBuffer, 
@@ -457,7 +468,7 @@ export class ShapeRenderer {
       new Float32Array([
         radius, 0, 0, 0,  // radius (vec4fの最初の要素)
         color[0], color[1], color[2], color[3],  // color
-        0, 0, 0, 0  // useColorBuffer (0 = false)
+        0, aspectRatio, 0, 0,  // useColorBuffer (0 = false)
       ])
     );
 
@@ -495,6 +506,10 @@ export class ShapeRenderer {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
 
+    // キャンバスのアスペクト比を計算
+    const canvas = this.#context.canvas;
+    const aspectRatio = canvas.width / canvas.height;
+
     // uniformバッファにデータを書き込む
     this.#device.queue.writeBuffer(
       this.#uniformBuffer, 
@@ -502,7 +517,7 @@ export class ShapeRenderer {
       new Float32Array([
         radius, 0, 0, 0,  // radius (vec4fの最初の要素)
         1.0, 1.0, 1.0, 1.0,  // デフォルトカラー（使用されない）
-        1, 0, 0, 0  // useColorBuffer (1 = true)
+        1, aspectRatio, 0, 0,  // useColorBuffer (1 = true)
       ])
     );
 
