@@ -63,6 +63,22 @@ export async function initCirclesDemo(canvasId) {
     new Float32Array(velocityBuffer.getMappedRange()).set(velocityData);
     velocityBuffer.unmap();
 
+    // colors用のバッファを作成
+    const colorsBuffer = device.createBuffer({
+      size: numCircles * 4 * 4, // vec4f * numCircles
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true
+    });
+    const colorsData = new Float32Array(numCircles * 4);
+    for (let i = 0; i < numCircles; i++) {
+      colorsData[i * 4 + 0] = Math.random(); // r
+      colorsData[i * 4 + 1] = Math.random(); // g
+      colorsData[i * 4 + 2] = Math.random(); // b
+      colorsData[i * 4 + 3] = 1.0;           // a
+    }
+    new Float32Array(colorsBuffer.getMappedRange()).set(colorsData);
+    colorsBuffer.unmap();
+
     // uniformバッファの作成
     const uniformBuffer = device.createBuffer({
       size: 16, // vec2<f32> screenSize + f32 deltaTime + f32 radius
@@ -98,7 +114,6 @@ export async function initCirclesDemo(canvasId) {
 
       const commandEncoder = device.createCommandEncoder();
 
-      // コンピュートパス
       const computePass = commandEncoder.beginComputePass();
       computePass.setPipeline(computePipeline);
       computePass.setBindGroup(0, bindGroup);
@@ -108,10 +123,10 @@ export async function initCirclesDemo(canvasId) {
       device.queue.submit([commandEncoder.finish()]);
 
       // 円を描画
-      shapeRenderer.renderCircles(
+      shapeRenderer.renderCirclesWithColorBuffer(
         centersBuffer, 
+        colorsBuffer,
         circleRadius, 
-        [1.0, 1.0, 1.0, 1.0], 
         numCircles
       );
     }

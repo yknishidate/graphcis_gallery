@@ -273,6 +273,8 @@ export class ShapeRenderer {
   #vertexBuffer;
   #shapeType;
   #numCircleSegments = 32;
+  #dummyColorsBuffer;
+  #uniformBuffer;
 
   constructor(device, context, format, shapeType = 'circle') {
     this.#device = device;
@@ -282,6 +284,11 @@ export class ShapeRenderer {
 
     // 形状の頂点データを生成
     const vertices = this.#generateShapeVertices(shapeType);
+
+    this.#uniformBuffer = this.#device.createBuffer({
+      size: 48, // vec4f (radius + color + useColorBuffer)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
     
     // 頂点バッファの作成
     this.#vertexBuffer = device.createBuffer({
@@ -292,6 +299,12 @@ export class ShapeRenderer {
     new Float32Array(this.#vertexBuffer.getMappedRange()).set(vertices);
     this.#vertexBuffer.unmap();
 
+    // 非常に小さな事前初期化のダミーcolorsバッファを作成
+    this.#dummyColorsBuffer = device.createBuffer({
+      size: 16, // 最小限のvec4f
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    });
+
     // 頂点シェーダーコード
     const vertexShaderCode = `
     struct VertexInput {
@@ -301,6 +314,7 @@ export class ShapeRenderer {
     struct Uniforms {
       radius: f32,
       color: vec4f,
+      useColorBuffer: f32,
     }
 
     struct VertexOutput {
@@ -310,6 +324,7 @@ export class ShapeRenderer {
 
     @group(0) @binding(0) var<uniform> uniforms: Uniforms;
     @group(0) @binding(1) var<storage, read> centers: array<vec2f>;
+    @group(0) @binding(2) var<storage, read> colors: array<vec4f>;
 
     @vertex
     fn main(
@@ -323,7 +338,13 @@ export class ShapeRenderer {
       let worldPos = scaledPos + centers[instanceIndex];
       
       output.position = vec4f(worldPos, 0.0, 1.0);
-      output.color = uniforms.color;
+      
+      // 色の選択
+      if (uniforms.useColorBuffer == 1.0) {
+        output.color = colors[instanceIndex];
+      } else {
+        output.color = uniforms.color;
+      }
       
       return output;
     }
@@ -424,24 +445,19 @@ export class ShapeRenderer {
     }
   }
 
-  // 円を描画するメソッド
+  // 単一色の円を描画するメソッド
   renderCircles(centersBuffer, radius, color, instanceCount) {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
 
-    // uniformバッファの作成
-    const uniformBuffer = this.#device.createBuffer({
-      size: 32, // vec4f (radius + color)
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
     // uniformバッファにデータを書き込む
     this.#device.queue.writeBuffer(
-      uniformBuffer, 
+      this.#uniformBuffer, 
       0, 
       new Float32Array([
         radius, 0, 0, 0,  // radius (vec4fの最初の要素)
-        color[0], color[1], color[2], color[3]  // color
+        color[0], color[1], color[2], color[3],  // color
+        0, 0, 0, 0  // useColorBuffer (0 = false)
       ])
     );
 
@@ -449,8 +465,9 @@ export class ShapeRenderer {
     const bindGroup = this.#device.createBindGroup({
       layout: this.#pipeline.getBindGroupLayout(0),
       entries: [
-        { binding: 0, resource: { buffer: uniformBuffer } },
-        { binding: 1, resource: { buffer: centersBuffer } }
+        { binding: 0, resource: { buffer: this.#uniformBuffer } },
+        { binding: 1, resource: { buffer: centersBuffer } },
+        { binding: 2, resource: { buffer: this.#dummyColorsBuffer } }
       ]
     });
 
@@ -467,20 +484,52 @@ export class ShapeRenderer {
     renderPass.setPipeline(this.#pipeline);
     renderPass.setVertexBuffer(0, this.#vertexBuffer);
     renderPass.setBindGroup(0, bindGroup);
-    
-    // 形状に応じて描画コマンドを変更
-    switch(this.#shapeType) {
-      case 'circle':
-        renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
-        break;
-      case 'rectangle':
-        renderPass.draw(6, instanceCount, 0, 0);
-        break;
-      case 'line':
-        renderPass.draw(2, instanceCount, 0, 0);
-        break;
-    }
+    renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
+    renderPass.end();
 
+    this.#device.queue.submit([commandEncoder.finish()]);
+  }
+
+  // カラーバッファを使用して円を描画するメソッド
+  renderCirclesWithColorBuffer(centersBuffer, colorsBuffer, radius, instanceCount) {
+    // コマンドエンコーダの作成
+    const commandEncoder = this.#device.createCommandEncoder();
+
+    // uniformバッファにデータを書き込む
+    this.#device.queue.writeBuffer(
+      this.#uniformBuffer, 
+      0, 
+      new Float32Array([
+        radius, 0, 0, 0,  // radius (vec4fの最初の要素)
+        1.0, 1.0, 1.0, 1.0,  // デフォルトカラー（使用されない）
+        1, 0, 0, 0  // useColorBuffer (1 = true)
+      ])
+    );
+
+    // バインドグループの作成
+    const bindGroup = this.#device.createBindGroup({
+      layout: this.#pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: this.#uniformBuffer } },
+        { binding: 1, resource: { buffer: centersBuffer } },
+        { binding: 2, resource: { buffer: colorsBuffer } }
+      ]
+    });
+
+    // レンダーパスの開始
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: this.#context.getCurrentTexture().createView(),
+        clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
+        loadOp: 'clear',
+        storeOp: 'store'
+      }]
+    });
+
+    renderPass.setPipeline(this.#pipeline);
+    renderPass.setVertexBuffer(0, this.#vertexBuffer);
+    renderPass.setBindGroup(0, bindGroup);
+    renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
     renderPass.end();
 
     // コマンドの実行
