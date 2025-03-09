@@ -111,6 +111,9 @@ const { title, description, id, scriptPath, codeBlocks } = Astro.props;
 async function initDemo() {
   try {
     const canvas = document.getElementById('webgpu-canvas');
+    if (!canvas) {
+      throw new Error('キャンバス要素が見つかりません。');
+    }
     
     // キャンバスのサイズを設定
     const demoContainer = document.querySelector('.demo-container');
@@ -136,7 +139,7 @@ async function initDemo() {
       throw new Error(`未知のプロジェクトID: ${id}`);
     }
   } catch (error) {
-    console.error('デモの初期化エラー:', error);
+    console.error('エラー:', error);
     
     // エラーメッセージを表示
     const errorElement = document.getElementById('error-message');

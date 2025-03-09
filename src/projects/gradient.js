@@ -2,8 +2,6 @@ import {
   initWebGPU, 
   loadShader, 
   createShaderModule, 
-  setupResizeObserver, 
-  displayError, 
   submitCommands,
   setupAnimationLoop,
   FullscreenQuadRenderer
@@ -162,21 +160,16 @@ function executeComputeAndRender(device, context) {
 
 // メイン関数
 export async function initGradientDemo(canvas) {
-  try {
-    // WebGPUの初期化
-    const { device, context } = await initWebGPU(canvas);
+  // WebGPUの初期化
+  const { device, context } = await initWebGPU(canvas);
 
-    // 初回のCompute Shader実行
-    await runComputeShader(device, context, canvas);
+  // 初回のCompute Shader実行
+  await runComputeShader(device, context, canvas);
 
-    // アニメーションループのセットアップ
-    setupAnimationLoop((currentTime) => {
-      runComputeShader(device, context, canvas, currentTime);
-    });
+  // アニメーションループのセットアップ
+  setupAnimationLoop((currentTime) => {
+    runComputeShader(device, context, canvas, currentTime);
+  });
 
-    return { device, context };
-  } catch (error) {
-    displayError(canvas, error.message);
-    throw error;
-  }
+  return { device, context };
 }
