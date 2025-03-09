@@ -1,17 +1,26 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
+// コードブロックの型定義
+export interface CodeBlock {
+  name: string;  // タブの名前（例: "Shader", "Compute Shader", "Utility Functions"）
+  code: string;  // コードの内容
+  language: string;  // コードの言語（"wgsl", "javascript", "glsl"など）
+}
+
 // プロジェクトレイアウトのprops
 export interface Props {
   title: string;
   description: string;
   id: string;
   scriptPath: string;
-  shaderCode: string;
-  scriptCode: string;
+  codeBlocks: CodeBlock[];  // 複数のコードブロックを許可
 }
 
-const { title, description, id, scriptPath, shaderCode, scriptCode } = Astro.props;
+const { title, description, id, scriptPath, codeBlocks } = Astro.props;
+
+// 最初のコードブロックをアクティブに設定
+const firstTabId = codeBlocks.length > 0 ? `code-tab-0` : '';
 ---
 
 <Layout>
@@ -30,16 +39,24 @@ const { title, description, id, scriptPath, shaderCode, scriptCode } = Astro.pro
     <div class="code-section">
       <div class="code-tabs">
         <div class="tab-buttons">
-          <button class="tab-button active" data-tab="shader">Shader</button>
-          <button class="tab-button" data-tab="script">Script</button>
+          {codeBlocks.map((block, index) => (
+            <button 
+              class={`tab-button ${index === 0 ? 'active' : ''}`} 
+              data-tab={`code-tab-${index}`}
+            >
+              {block.name}
+            </button>
+          ))}
         </div>
         <div class="tab-content">
-          <div class="tab-pane active" id="shader">
-            <pre><code class="language-wgsl">{shaderCode}</code></pre>
-          </div>
-          <div class="tab-pane" id="script">
-            <pre><code class="language-javascript">{scriptCode}</code></pre>
-          </div>
+          {codeBlocks.map((block, index) => (
+            <div 
+              class={`tab-pane ${index === 0 ? 'active' : ''}`} 
+              id={`code-tab-${index}`}
+            >
+              <pre><code class={`language-${block.language}`}>{block.code}</code></pre>
+            </div>
+          ))}
         </div>
       </div>
     </div>
