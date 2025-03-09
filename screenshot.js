@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 (async () => {
   try {
@@ -13,17 +14,21 @@ import path from 'path';
     // ウィンドウサイズを設定
     await page.setViewport({ width: 800, height: 600 });
 
-    // プロジェクト
-    const projects = [
-      { 
-        url: `http://${HOST}:${PORT}/projects/gradient`, 
-        outputFile: 'public/images/gradient-thumbnail.png' 
-      },
-      { 
-        url: `http://${HOST}:${PORT}/projects/triangle`, 
-        outputFile: 'public/images/triangle-thumbnail.png' 
-      }
-    ];
+    // プロジェクトディレクトリのパス
+    const projectsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'src', 'projects');
+
+    // プロジェクトファイルを取得
+    const projectFiles = fs.readdirSync(projectsDir)
+      .filter(file => 
+        file.endsWith('.js') && file !== 'webgpu-utils.js'
+      )
+      .map(file => path.basename(file, '.js'));
+
+    // プロジェクトの配列を動的に生成
+    const projects = projectFiles.map(project => ({
+      url: `http://${HOST}:${PORT}/projects/${project}`, 
+      outputFile: `public/images/${project}-thumbnail.png`
+    }));
 
     for (const project of projects) {
       try {
