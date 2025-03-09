@@ -272,6 +272,7 @@ export class ShapeRenderer {
   #vertexBuffer;
   #instanceBuffer;
   #shapeType;
+  #numCircleSegments = 32;
 
   constructor(device, format, shapeType = 'circle') {
     this.#device = device;
@@ -409,16 +410,17 @@ export class ShapeRenderer {
   #generateShapeVertices(shapeType) {
     switch(shapeType) {
       case 'circle':
-        // 円のメッシュ（三角形ファン）
+        // 円のメッシュ（三角形ストリップ）
         const circleVertices = [];
-        const numSegments = 32;
-        circleVertices.push(0, 0); // 中心点
 
-        for (let i = 0; i <= numSegments; i++) {
-          const angle = (i / numSegments) * Math.PI * 2;
+        for (let i = 0; i < this.#numCircleSegments; i++) {
+          const angle1 = (i / this.#numCircleSegments) * Math.PI * 2;
+          const angle2 = ((i + 1) / this.#numCircleSegments) * Math.PI * 2;
+          
           circleVertices.push(
-            Math.cos(angle),
-            Math.sin(angle)
+            0, 0, // 中心点
+            Math.cos(angle2), Math.sin(angle2),
+            Math.cos(angle1), Math.sin(angle1),
           );
         }
 
@@ -447,8 +449,8 @@ export class ShapeRenderer {
     }
   }
 
-  // インスタンスデータの更新
-  updateInstances(instances) {
+  // 描画メソッド
+  render(renderPass, instances) {
     // インスタンスデータをバッファに書き込む
     this.#device.queue.writeBuffer(
       this.#instanceBuffer, 
@@ -459,18 +461,16 @@ export class ShapeRenderer {
         instance.color[0], instance.color[1], instance.color[2], instance.color[3] // color
       ]))
     );
-  }
 
-  // 描画メソッド
-  render(renderPass, instanceCount) {
     renderPass.setPipeline(this.#pipeline);
     renderPass.setVertexBuffer(0, this.#vertexBuffer);
     renderPass.setVertexBuffer(1, this.#instanceBuffer);
     
     // 形状に応じて描画コマンドを変更
+    const instanceCount = instances.length;
     switch(this.#shapeType) {
       case 'circle':
-        renderPass.draw(34, instanceCount, 0, 0); // 32セグメント + 中心点 + 最後の点
+        renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
         break;
       case 'rectangle':
         renderPass.draw(6, instanceCount, 0, 0);

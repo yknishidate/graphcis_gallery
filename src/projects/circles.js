@@ -18,7 +18,7 @@ export async function initCirclesDemo(canvasId) {
     const { device, context, format } = await initWebGPU(canvas);
 
     const numCircles = 1024;
-    const circleRadius = 0.01; // 正規化された座標系での半径
+    const circleRadius = 0.025; // 正規化された座標系での半径
 
     // ShapeRendererの作成
     const shapeRenderer = new ShapeRenderer(device, format, 'circle');
@@ -60,8 +60,7 @@ export async function initCirclesDemo(canvasId) {
       });
 
       // インスタンスデータの更新と描画
-      shapeRenderer.updateInstances(instances);
-      shapeRenderer.render(renderPass, numCircles);
+      shapeRenderer.render(renderPass, instances);
 
       renderPass.end();
 
