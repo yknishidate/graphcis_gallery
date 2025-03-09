@@ -79,11 +79,12 @@ export async function initCirclesDemo(canvas) {
   // リサイズオブザーバーのセットアップ
   setupResizeObserver(canvas, device);
 
+  // アニメーションループのセットアップ
   let lastTime = 0;
-  function frame(time) {
-    time *= 0.001; // convert to seconds
-    const deltaTime = time - lastTime;
-    lastTime = time;
+  setupAnimationLoop((currentTime) => {
+    currentTime *= 0.001; // convert to seconds
+    const deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
 
     // uniformバッファの更新
     device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([
@@ -102,10 +103,7 @@ export async function initCirclesDemo(canvas) {
 
     // 円を描画
     shapeRenderer.renderCircles(centersBuffer, circleRadius, colorsBuffer, numCircles);
-  }
-
-  // アニメーションループのセットアップ
-  setupAnimationLoop(frame);
+  });
 
   return { device, context };
 }
