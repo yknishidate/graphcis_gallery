@@ -25,11 +25,13 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     // Bounce off screen boundaries
     if (center.x - uniforms.circleRadius < -1.0 || 
         center.x + uniforms.circleRadius > 1.0) {
+        center.x = clamp(center.x, -1.0 + uniforms.circleRadius, 1.0 - uniforms.circleRadius);
         velocity.x *= -1.0;
     }
 
     if (center.y - uniforms.circleRadius < -1.0 ||
         center.y + uniforms.circleRadius > 1.0) {
+        center.y = clamp(center.y, -1.0 + uniforms.circleRadius, 1.0 - uniforms.circleRadius);
         velocity.y *= -1.0;
     }
 
