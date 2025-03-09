@@ -2,21 +2,33 @@
 import Layout from '../layouts/Layout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 
-// プロジェクト一覧データ
-const projects = [
-  {
-    id: 'triangle',
-    title: '基本の三角形',
-    description: 'WebGPUを使用した最も基本的な三角形の描画デモです。頂点シェーダーとフラグメントシェーダーの基本を学びます。',
-    thumbnail: '/images/triangle-thumbnail.png',
-  },
-  {
-    id: 'gradient',
-    title: 'コンピュートシェーダグラデーション',
-    description: 'WebGPUのコンピュートシェーダを使用して、キャンバス全体にグラデーションを描画するデモです。',
-    thumbnail: '/images/gradient-thumbnail.png',
-  }
-];
+// プロジェクトページを動的にインポート
+const projectFiles = import.meta.glob('./projects/*.astro');
+
+// プロジェクト情報の型定義
+interface ProjectInfo {
+  title: string;
+  description: string;
+  script: string;
+}
+
+// プロジェクト情報を非同期に取得
+const projects = await Promise.all(
+  Object.entries(projectFiles).map(async ([path, importFn]) => {
+    const module = await importFn();
+    const match = path.match(/\/([^/]+)\.astro$/);
+    const id = match ? match[1] : '';
+
+    // プロジェクト情報を取得（変更点）
+    const projectInfo = module.projectInfo;
+
+    return {
+      ...projectInfo,
+      id,
+      thumbnail: `/images/${id}-thumbnail.png`
+    };
+  })
+);
 ---
 
 <Layout>

@@ -9,7 +9,7 @@ const shader = await fs.readFile(shaderPath, 'utf-8');
 const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/triangle.js'), 'utf-8');
 
 // プロジェクト情報
-const projectInfo = {
+export const projectInfo = {
   title: '基本の三角形',
   description: 'WebGPUを使用した最も基本的な三角形の描画デモです。頂点シェーダーとフラグメントシェーダーの基本を学びます。',
   script: '/src/projects/triangle.js',
