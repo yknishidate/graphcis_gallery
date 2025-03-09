@@ -17,7 +17,7 @@ export async function initCirclesDemo(canvasId) {
     // WebGPUの初期化
     const { device, context, format } = await initWebGPU(canvas);
 
-    const numCircles = 1000;
+    const numCircles = 1024;
     const circleRadius = 0.01; // 正規化された座標系での半径
 
     // ShapeRendererの作成

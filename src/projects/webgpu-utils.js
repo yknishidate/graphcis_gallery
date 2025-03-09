@@ -292,7 +292,7 @@ export class ShapeRenderer {
 
     // インスタンスバッファの初期化（後で更新可能）
     this.#instanceBuffer = device.createBuffer({
-      size: 1024 * 4 * 4, // 初期サイズ（必要に応じて動的に拡張可能）
+      size: 1024 * 4 * 8, // 初期サイズ（必要に応じて動的に拡張可能）
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
 
@@ -303,8 +303,8 @@ export class ShapeRenderer {
     }
 
     struct InstanceInput {
-      @location(1) center: vec2f,
-      @location(2) radius: f32,
+      @location(1) translation: vec2f,
+      @location(2) scale: vec2f,
       @location(3) color: vec4f,
     }
 
@@ -321,8 +321,8 @@ export class ShapeRenderer {
       var output: VertexOutput;
       
       // インスタンスの位置とスケールを適用
-      let scaledPos = vertex.position * instance.radius;
-      let worldPos = scaledPos + instance.center;
+      let scaledPos = vertex.position * instance.scale;
+      let worldPos = scaledPos + instance.translation;
       
       output.position = vec4f(worldPos, 0.0, 1.0);
       output.color = instance.color;
@@ -333,6 +333,11 @@ export class ShapeRenderer {
 
     // フラグメントシェーダーコード
     const fragmentShaderCode = `
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) color: vec4f,
+    }
+
     @fragment
     fn main(input: VertexOutput) -> @location(0) vec4f {
       return input.color;
@@ -363,22 +368,22 @@ export class ShapeRenderer {
           },
           // インスタンスバッファ
           {
-            arrayStride: 4 * 4 * 4, // vec2f + f32 + vec4f
+            arrayStride: 4 * 8, // vec2f + vec2f + vec4f
             stepMode: 'instance',
             attributes: [
               {
                 shaderLocation: 1,
                 offset: 0,
-                format: 'float32x2', // center
+                format: 'float32x2', // translation
               },
               {
                 shaderLocation: 2,
                 offset: 2 * 4,
-                format: 'float32x2', // radius (変更: float32x1 -> float32x2)
+                format: 'float32x2', // scale
               },
               {
                 shaderLocation: 3,
-                offset: 3 * 4,
+                offset: 4 * 4,
                 format: 'float32x4', // color
               }
             ]
@@ -449,8 +454,8 @@ export class ShapeRenderer {
       this.#instanceBuffer, 
       0, 
       new Float32Array(instances.flatMap(instance => [
-        instance.center[0], instance.center[1], // x, y
-        instance.radius || 1.0, 0, // radius (float32x2に変更)
+        instance.center[0], instance.center[1], // translation
+        instance.radius, instance.radius,       // scale
         instance.color[0], instance.color[1], instance.color[2], instance.color[3] // color
       ]))
     );
