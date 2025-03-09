@@ -5,7 +5,6 @@ import {
   createShaderModule, 
   setupResizeObserver, 
   displayError, 
-  beginRenderPass, 
   submitCommands,
   setupAnimationLoop,
   createFullscreenQuadPipeline,
@@ -33,7 +32,7 @@ async function runComputeShader(device, context, canvas, currentTime = 0) {
 
   // キャンバスサイズが変更された場合、出力テクスチャを再作成
   if (outputTexture.width !== canvas.width || outputTexture.height !== canvas.height) {
-    updateCanvasResources(device, format, canvas);
+    updateCanvasResources(device, canvas);
   }
 
   // 時間値を更新
@@ -49,7 +48,7 @@ async function runComputeShader(device, context, canvas, currentTime = 0) {
 // リソースの初期化
 async function initializeResources(device, format, canvas) {
   // コンピュートシェーダの読み込み
-  const computeShaderCode = await loadShader('/shaders/gradient.comp.wgsl');
+  const computeShaderCode = await loadShader('/shaders/gradient.wgsl');
   computeShaderModule = createShaderModule(device, computeShaderCode);
   
   // フルスクリーン描画用のパイプラインとリソースを作成
@@ -109,7 +108,7 @@ async function initializeResources(device, format, canvas) {
 }
 
 // キャンバスサイズ変更時のリソース更新
-function updateCanvasResources(device, format, canvas) {
+function updateCanvasResources(device, canvas) {
   // 既存のテクスチャがあれば破棄
   if (outputTexture) {
     outputTexture.destroy();
