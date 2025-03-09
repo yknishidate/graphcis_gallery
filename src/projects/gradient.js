@@ -175,11 +175,6 @@ export async function initGradientDemo(canvasId) {
       runComputeShader(device, context, canvas, currentTime);
     });
 
-    // キャンバスのリサイズ処理
-    setupResizeObserver(canvas, device, () => {
-      // リサイズ時は次のアニメーションフレームで自動的に処理される
-    });
-
     return { device, context };
   } catch (error) {
     displayError(canvas, error.message);

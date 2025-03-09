@@ -7,15 +7,6 @@ import {
   submitCommands 
 } from './webgpu-utils.js';
 
-// シェーダーモジュールの作成
-async function loadShaderModule(device) {
-  // シェーダーファイルの読み込み
-  const shader = await loadShader('/shaders/triangle.wgsl');
-
-  // シェーダーモジュールの作成
-  return createShaderModule(device, shader);
-}
-
 // レンダリングパイプラインの作成
 function createRenderPipeline(device, format, shaderModule) {
   const pipelineDescriptor = {
@@ -66,8 +57,11 @@ export async function initTriangleDemo(canvasId) {
     // WebGPUの初期化
     const { device, context, format } = await initWebGPU(canvas);
 
+    // シェーダーファイルの読み込み
+    const shader = await loadShader('/shaders/triangle.wgsl');
+
     // シェーダーモジュールの作成
-    const shaderModule = await loadShaderModule(device);
+    const shaderModule = createShaderModule(device, shader);
 
     // レンダリングパイプラインの作成
     const pipeline = createRenderPipeline(device, format, shaderModule);
