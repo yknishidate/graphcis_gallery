@@ -62,7 +62,9 @@ async function initializeResources(device, format, canvas) {
   outputTexture = device.createTexture({
     size: [canvas.width, canvas.height],
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+    usage: GPUTextureUsage.STORAGE_BINDING | 
+           GPUTextureUsage.TEXTURE_BINDING |
+           GPUTextureUsage.COPY_SRC,
   });
   
   // コンピュートシェーダ用のバインドグループレイアウトを作成
@@ -112,7 +114,9 @@ function updateCanvasResources(device, canvas) {
   outputTexture = device.createTexture({
     size: [canvas.width, canvas.height],
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+    usage: GPUTextureUsage.STORAGE_BINDING |
+           GPUTextureUsage.TEXTURE_BINDING |
+           GPUTextureUsage.COPY_SRC,
   });
 }
 

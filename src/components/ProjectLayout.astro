@@ -18,9 +18,6 @@ export interface Props {
 }
 
 const { title, description, id, scriptPath, codeBlocks } = Astro.props;
-
-// 最初のコードブロックをアクティブに設定
-const firstTabId = codeBlocks.length > 0 ? `code-tab-0` : '';
 ---
 
 <Layout>
