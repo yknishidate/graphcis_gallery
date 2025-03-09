@@ -10,16 +10,22 @@ interface ProjectInfo {
   title: string;
   description: string;
   script: string;
+  date: string;
+}
+
+// モジュールの型定義
+interface ProjectModule {
+  projectInfo: ProjectInfo;
 }
 
 // プロジェクト情報を非同期に取得
 const projects = await Promise.all(
   Object.entries(projectFiles).map(async ([path, importFn]) => {
-    const module = await importFn();
+    const module = await importFn() as ProjectModule;
     const match = path.match(/\/([^/]+)\.astro$/);
     const id = match ? match[1] : '';
 
-    // プロジェクト情報を取得（変更点）
+    // プロジェクト情報を取得
     const projectInfo = module.projectInfo;
 
     return {
@@ -29,6 +35,11 @@ const projects = await Promise.all(
     };
   })
 );
+
+// プロジェクトを日付で古い順にソート
+projects.sort((a, b) => {
+  return new Date(a.date).getTime() - new Date(b.date).getTime();
+});
 ---
 
 <Layout>

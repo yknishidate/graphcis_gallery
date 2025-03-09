@@ -1,4 +1,5 @@
 ---
+import { date } from 'astro:schema';
 import Layout from '../../layouts/Layout.astro';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -13,6 +14,7 @@ export const projectInfo = {
   title: 'コンピュートシェーダ',
   description: 'WebGPUのコンピュートシェーダを使用して、キャンバス全体にグラデーションを描画するデモです。',
   script: '/src/projects/gradient.js',
+  date: '2025-03-08',
 };
 
 // プロジェクトID
