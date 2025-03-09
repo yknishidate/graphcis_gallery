@@ -1,9 +1,7 @@
-// WebGPU 三角形デモ
 import { 
   initWebGPU, 
   loadShader, 
   createShaderModule, 
-  setupResizeObserver, 
   displayError, 
   beginRenderPass, 
   submitCommands 

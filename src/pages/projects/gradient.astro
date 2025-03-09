@@ -11,8 +11,8 @@ const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/grad
 
 // プロジェクト情報
 export const projectInfo = {
-  title: 'コンピュートシェーダ',
-  description: 'WebGPUのコンピュートシェーダを使用して、キャンバス全体にグラデーションを描画するデモです。',
+  title: 'Compute Shader',
+  description: 'A demo that uses WebGPU compute shaders to draw a colorful gradient across the canvas.',
   script: '/src/projects/gradient.js',
   date: '2025-03-08',
 };
@@ -26,7 +26,7 @@ const id = 'gradient';
     <div class="project-header">
       <h1>{projectInfo.title}</h1>
       <p class="description">{projectInfo.description}</p>
-      <a href="/" class="back-link">← ホームに戻る</a>
+      <a href="/" class="back-link">Back to Home</a>
     </div>
 
     <div class="demo-container">
@@ -34,30 +34,11 @@ const id = 'gradient';
       <div id="error-message" class="error-message"></div>
     </div>
 
-    <div class="info-section">
-      <h2>このデモについて</h2>
-      <div>
-        <p>
-          このデモは、WebGPUのコンピュートシェーダを使用して、キャンバス全体にカラフルなグラデーションを描画します。
-          コンピュートシェーダは、GPUの並列処理能力を活用して、画像処理や計算を高速に実行できます。
-        </p>
-        <ul>
-          <li><strong>コンピュートシェーダ</strong>: GPUで並列計算を行うためのプログラム。グラフィックスパイプラインを使わずに直接計算を実行できます。</li>
-          <li><strong>ストレージテクスチャ</strong>: コンピュートシェーダから書き込み可能なテクスチャ。計算結果を保存するために使用します。</li>
-          <li><strong>ワークグループ</strong>: コンピュートシェーダの実行単位。GPUは多数のスレッドを並列に実行します。</li>
-        </ul>
-        <p>
-          このデモでは、各ピクセルの位置に基づいてカラーグラデーションを計算し、結果をテクスチャに書き込んでから画面に表示しています。
-        </p>
-      </div>
-    </div>
-
     <div class="code-section">
-      <h2>コードの解説</h2>
       <div class="code-tabs">
         <div class="tab-buttons">
-          <button class="tab-button active" data-tab="shader">シェーダ</button>
-          <button class="tab-button" data-tab="script">スクリプト</button>
+          <button class="tab-button active" data-tab="shader">Shader</button>
+          <button class="tab-button" data-tab="script">Script</button>
         </div>
         <div class="tab-content">
           <div class="tab-pane active" id="shader">

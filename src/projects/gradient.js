@@ -1,4 +1,3 @@
-// WebGPU グラデーションデモ（Compute Shader使用）
 import { 
   initWebGPU, 
   loadShader, 
