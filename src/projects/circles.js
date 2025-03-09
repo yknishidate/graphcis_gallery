@@ -95,16 +95,8 @@ export async function initCirclesDemo(canvasId) {
       computePass.setBindGroup(0, bindGroup);
       computePass.dispatchWorkgroups(Math.ceil(numCircles / 64));
       computePass.end();
-
-      // レンダーパス
-      const renderPass = commandEncoder.beginRenderPass({
-        colorAttachments: [{
-          view: context.getCurrentTexture().createView(),
-          clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store'
-        }]
-      });
+      
+      device.queue.submit([commandEncoder.finish()]);
 
       // インスタンスデータの準備
       const instances = [];
@@ -125,12 +117,7 @@ export async function initCirclesDemo(canvasId) {
       }
 
       // インスタンスデータの更新と描画
-      shapeRenderer.render(renderPass, instances);
-
-      renderPass.end();
-
-      // コマンドの実行
-      device.queue.submit([commandEncoder.finish()]);
+      shapeRenderer.render(context, instances);
     }
 
     // アニメーションループのセットアップ

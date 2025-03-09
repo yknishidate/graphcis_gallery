@@ -449,8 +449,21 @@ export class ShapeRenderer {
     }
   }
 
-  // 描画メソッド
-  render(renderPass, instances) {
+  // インスタンスデータの更新と描画
+  render(context, instances, clearColor = { r: 0.1, g: 0.1, b: 0.15, a: 1.0 }) {
+    // コマンドエンコーダの作成
+    const commandEncoder = this.#device.createCommandEncoder();
+
+    // レンダーパスの開始
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: context.getCurrentTexture().createView(),
+        clearValue: clearColor,
+        loadOp: 'clear',
+        storeOp: 'store'
+      }]
+    });
+
     // インスタンスデータをバッファに書き込む
     this.#device.queue.writeBuffer(
       this.#instanceBuffer, 
@@ -479,5 +492,10 @@ export class ShapeRenderer {
         renderPass.draw(2, instanceCount, 0, 0);
         break;
     }
+
+    renderPass.end();
+
+    // コマンドの実行
+    this.#device.queue.submit([commandEncoder.finish()]);
   }
 }
