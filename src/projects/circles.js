@@ -57,7 +57,7 @@ export async function initCirclesDemo(canvasId) {
     });
     const velocityData = new Float32Array(numCircles * 2);
     for (let i = 0; i < numCircles; i++) {
-      velocityData[i * 2 + 0] = (Math.random() - 0.5);     // x velocity
+      velocityData[i * 2 + 0] = (Math.random() - 0.5); // x velocity
       velocityData[i * 2 + 1] = (Math.random() - 0.5); // y velocity
     }
     new Float32Array(velocityBuffer.getMappedRange()).set(velocityData);

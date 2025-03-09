@@ -23,11 +23,13 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     center += velocity * uniforms.deltaTime;
 
     // Bounce off screen boundaries
-    if (center.x - uniforms.circleRadius < 0.0 || center.x + uniforms.circleRadius > uniforms.screenSize.x) {
+    if (center.x - uniforms.circleRadius < -1.0 || 
+        center.x + uniforms.circleRadius > 1.0) {
         velocity.x *= -1.0;
     }
 
-    if (center.y - uniforms.circleRadius < 0.0 || center.y + uniforms.circleRadius > uniforms.screenSize.y) {
+    if (center.y - uniforms.circleRadius < -1.0 ||
+        center.y + uniforms.circleRadius > 1.0) {
         velocity.y *= -1.0;
     }
 
