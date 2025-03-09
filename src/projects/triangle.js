@@ -37,6 +37,4 @@ export async function initTriangleDemo(device, context, canvas, format) {
   renderPass.draw(3); // 3頂点で三角形を描画
   renderPass.end();
   submitCommands(device, commandEncoder);
-
-  return { device, context, pipeline };
 }

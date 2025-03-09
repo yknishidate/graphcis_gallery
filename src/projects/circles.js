@@ -9,13 +9,10 @@ import {
 
 // メイン関数
 export async function initCirclesDemo(device, context, canvas, format) {
-  const numCircles = 256;
-  const circleRadius = 0.025; // 正規化された座標系での半径
-
   // シェーダーの読み込み
   const shaderCode = await loadShader('/shaders/circles.wgsl');
   const shaderModule = createShaderModule(device, shaderCode);
-
+  
   // コンピュートパイプラインの作成
   const computePipeline = device.createComputePipeline({
     layout: 'auto',
@@ -24,31 +21,25 @@ export async function initCirclesDemo(device, context, canvas, format) {
       entryPoint: 'main'
     }
   });
-
-  // centersDataの作成
+  
+  // データの作成
+  const numCircles = 256;
+  const circleRadius = 0.025; // 正規化された座標系での半径
   const centersData = new Float32Array(numCircles * 2);
+  const velocityData = new Float32Array(numCircles * 2);
+  const colorsData = new Float32Array(numCircles * 4);
   for (let i = 0; i < numCircles; i++) {
     centersData[i * 2] = Math.random() * 2 - 1;     // x position
     centersData[i * 2 + 1] = Math.random() * 2 - 1; // y position
-  }
-  
-  // velocityDataの作成
-  const velocityData = new Float32Array(numCircles * 2);
-  for (let i = 0; i < numCircles; i++) {
     velocityData[i * 2 + 0] = (Math.random() - 0.5); // x velocity
     velocityData[i * 2 + 1] = (Math.random() - 0.5); // y velocity
-  }
-  
-  // colorsDataの作成
-  const colorsData = new Float32Array(numCircles * 4);
-  for (let i = 0; i < numCircles; i++) {
     colorsData[i * 4 + 0] = Math.random() * 0.5 + 0.5; // r
     colorsData[i * 4 + 1] = Math.random() * 0.5 + 0.5; // g
     colorsData[i * 4 + 2] = Math.random() * 0.5 + 0.5; // b
     colorsData[i * 4 + 3] = 1.0;                       // a
   }
 
-  // バッファの作成
+  // storageバッファの作成
   const centersBuffer = createBufferFromData(device, centersData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
   const velocityBuffer = createBufferFromData(device, velocityData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
   const colorsBuffer = createBufferFromData(device, colorsData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
@@ -88,7 +79,6 @@ export async function initCirclesDemo(device, context, canvas, format) {
     ]));
 
     const commandEncoder = device.createCommandEncoder();
-
     const computePass = commandEncoder.beginComputePass();
     computePass.setPipeline(computePipeline);
     computePass.setBindGroup(0, bindGroup);
@@ -100,6 +90,4 @@ export async function initCirclesDemo(device, context, canvas, format) {
     // 円を描画
     shapeRenderer.renderCircles(centersBuffer, circleRadius, colorsBuffer, numCircles);
   });
-
-  return { device, context };
 }

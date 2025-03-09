@@ -7,7 +7,7 @@ import {
 } from './webgpu-utils.js';
 
 export async function initGradientDemo(device, context, canvas, format) {
-  // フルスクリーン描画用のレンダラーを作成
+  // テクスチャ描画用のレンダラーを作成
   const textureRenderer = new TextureRenderer(device, format, canvas);
   
   // 時間用のユニフォームバッファを作成
@@ -38,7 +38,7 @@ export async function initGradientDemo(device, context, canvas, format) {
     },
   });
 
-  // コンピュートシェーダ用のバインドグループを作成
+  // バインドグループを作成
   const computeBindGroup = device.createBindGroup({
     layout: computePipeline.getBindGroupLayout(0),
     entries: [
@@ -83,6 +83,4 @@ export async function initGradientDemo(device, context, canvas, format) {
     // テクスチャをフルスクリーンで描画
     textureRenderer.render(context, outputTexture);
   });
-
-  return { device, context };
 }
