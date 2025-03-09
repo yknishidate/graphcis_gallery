@@ -127,11 +127,11 @@ async function initDemo() {
     
     // プロジェクトIDに基づいて適切な初期化関数を呼び出す
     if (id === 'triangle') {
-      await module.initTriangleDemo('webgpu-canvas');
+      await module.initTriangleDemo(canvas);
     } else if (id === 'gradient') {
-      await module.initGradientDemo('webgpu-canvas');
+      await module.initGradientDemo(canvas);
     } else if (id === 'circles') {
-      await module.initCirclesDemo('webgpu-canvas');
+      await module.initCirclesDemo(canvas);
     } else {
       throw new Error(`未知のプロジェクトID: ${id}`);
     }

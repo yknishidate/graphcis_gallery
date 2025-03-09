@@ -161,12 +161,7 @@ function executeComputeAndRender(device, context) {
 }
 
 // メイン関数
-export async function initGradientDemo(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) {
-    throw new Error(`Canvas with id ${canvasId} not found`);
-  }
-
+export async function initGradientDemo(canvas) {
   try {
     // WebGPUの初期化
     const { device, context } = await initWebGPU(canvas);

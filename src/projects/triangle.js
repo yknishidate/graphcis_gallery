@@ -7,12 +7,7 @@ import {
   submitCommands 
 } from './webgpu-utils.js';
 
-export async function initTriangleDemo(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) {
-    throw new Error(`Canvas with id ${canvasId} not found`);
-  }
-
+export async function initTriangleDemo(canvas) {
   try {
     // WebGPUの初期化
     const { device, context, format } = await initWebGPU(canvas);
