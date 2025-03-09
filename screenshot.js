@@ -1,4 +1,6 @@
 import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
 
 (async () => {
   try {
@@ -28,7 +30,7 @@ import puppeteer from 'puppeteer';
         // ページにアクセス（タイムアウトを追加）
         await page.goto(project.url, { 
           waitUntil: 'networkidle0',
-          timeout: 5000 // 5秒でタイムアウト
+          timeout: 10000 // 10秒でタイムアウト
         });
 
         // キャンバスを取得
