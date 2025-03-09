@@ -96,7 +96,7 @@ export async function initCirclesDemo(canvasId) {
     });
 
     // ShapeRendererの作成
-    const shapeRenderer = new ShapeRenderer(device, context, format, 'circle');
+    const shapeRenderer = new ShapeRenderer(device, context, format);
 
     // リサイズオブザーバーのセットアップ
     setupResizeObserver(canvas, device);

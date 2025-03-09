@@ -1,5 +1,3 @@
-// WebGPU ユーティリティ関数
-
 // フルスクリーン四角形描画用のレンダラークラス
 export class FullscreenQuadRenderer {
   // プライベート変数
@@ -267,37 +265,25 @@ export function setupAnimationLoop(callback) {
 export class ShapeRenderer {
   #device;
   #context;
-  #format;
   #pipeline;
-  #bindGroupLayout;
-  #vertexBuffer;
-  #shapeType;
+  #vertexBuffers = {};
   #numCircleSegments = 32;
   #dummyColorsBuffer;
   #uniformBuffer;
 
-  constructor(device, context, format, shapeType = 'circle') {
+  constructor(device, context, format) {
     this.#device = device;
     this.#context = context;
-    this.#format = format;
-    this.#shapeType = shapeType;
 
-    // 形状の頂点データを生成
-    const vertices = this.#generateShapeVertices(shapeType);
+    // すべての形状の頂点バッファを事前に作成
+    this.#vertexBuffers['circle'] = this.#createVertexBuffer(this.#generateCircleVertices());
+    this.#vertexBuffers['rectangle'] = this.#createVertexBuffer(this.#generateRectangleVertices());
+    this.#vertexBuffers['line'] = this.#createVertexBuffer(this.#generateLineVertices());
 
     this.#uniformBuffer = this.#device.createBuffer({
       size: 48, // vec4f (radius + color + useColorBuffer + aspectRatio)
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
-    
-    // 頂点バッファの作成
-    this.#vertexBuffer = device.createBuffer({
-      size: vertices.byteLength,
-      usage: GPUBufferUsage.VERTEX,
-      mappedAtCreation: true
-    });
-    new Float32Array(this.#vertexBuffer.getMappedRange()).set(vertices);
-    this.#vertexBuffer.unmap();
 
     // 非常に小さな事前初期化のダミーcolorsバッファを作成
     this.#dummyColorsBuffer = device.createBuffer({
@@ -409,47 +395,54 @@ export class ShapeRenderer {
     });
   }
 
-  // 形状の頂点データを生成
-  #generateShapeVertices(shapeType) {
-    switch(shapeType) {
-      case 'circle':
-        // 円のメッシュ（三角形リスト）
-        const circleVertices = [];
+  // 頂点バッファを作成するヘルパーメソッド
+  #createVertexBuffer(vertices) {
+    const buffer = this.#device.createBuffer({
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true
+    });
+    new Float32Array(buffer.getMappedRange()).set(vertices);
+    buffer.unmap();
+    return buffer;
+  }
 
-        for (let i = 0; i < this.#numCircleSegments; i++) {
-          const angle1 = (i / this.#numCircleSegments) * Math.PI * 2;
-          const angle2 = ((i + 1) / this.#numCircleSegments) * Math.PI * 2;
-          
-          circleVertices.push(
-            0, 0, // 中心点
-            Math.cos(angle2), Math.sin(angle2),
-            Math.cos(angle1), Math.sin(angle1),
-          );
-        }
+  // 円の頂点データを生成
+  #generateCircleVertices() {
+    const circleVertices = [];
 
-        return new Float32Array(circleVertices);
-
-      case 'rectangle':
-        // 四角形の頂点
-        return new Float32Array([
-          -0.5, -0.5,  // 左下
-           0.5, -0.5,  // 右下
-           0.5,  0.5,  // 右上
-          -0.5,  0.5,  // 左上
-          -0.5, -0.5,  // 左下（最初の点に戻る）
-           0.5,  0.5   // 右上（三角形を作る）
-        ]);
-
-      case 'line':
-        // 線分
-        return new Float32Array([
-          0, 0,  // 開始点
-          1, 0   // 終了点
-        ]);
-
-      default:
-        throw new Error(`サポートされていない形状: ${shapeType}`);
+    for (let i = 0; i < this.#numCircleSegments; i++) {
+      const angle1 = (i / this.#numCircleSegments) * Math.PI * 2;
+      const angle2 = ((i + 1) / this.#numCircleSegments) * Math.PI * 2;
+      
+      circleVertices.push(
+        0, 0, // 中心点
+        Math.cos(angle2), Math.sin(angle2),
+        Math.cos(angle1), Math.sin(angle1),
+      );
     }
+
+    return new Float32Array(circleVertices);
+  }
+
+  // 四角形の頂点データを生成
+  #generateRectangleVertices() {
+    return new Float32Array([
+      -0.5, -0.5,  // 左下
+       0.5, -0.5,  // 右下
+       0.5,  0.5,  // 右上
+      -0.5,  0.5,  // 左上
+      -0.5, -0.5,  // 左下（最初の点に戻る）
+       0.5,  0.5   // 右上（三角形を作る）
+    ]);
+  }
+
+  // 線分の頂点データを生成
+  #generateLineVertices() {
+    return new Float32Array([
+      0, 0,  // 開始点
+      1, 0   // 終了点
+    ]);
   }
 
   // 円を描画するメソッド（単一色またはカラーバッファに対応）
@@ -509,7 +502,7 @@ export class ShapeRenderer {
     });
 
     renderPass.setPipeline(this.#pipeline);
-    renderPass.setVertexBuffer(0, this.#vertexBuffer);
+    renderPass.setVertexBuffer(0, this.#vertexBuffers['circle']);
     renderPass.setBindGroup(0, bindGroup);
     renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
     renderPass.end();
