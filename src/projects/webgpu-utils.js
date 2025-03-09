@@ -251,6 +251,35 @@ export function submitCommands(device, commandEncoder) {
   device.queue.submit([commandBuffer]);
 }
 
+// バッファ作成のユーティリティ関数
+// device: GPUDevice
+// data: Float32Array | Uint32Array | ... などのバッファデータ
+// usage: GPUBufferUsageFlags
+// options?: { mappedAtCreation?: boolean, label?: string }
+export function createBufferFromData(device, data, usage, options = {}) {
+  const {
+    mappedAtCreation = true,
+    label = 'WebGPU Buffer'
+  } = options;
+
+  // バッファサイズの計算
+  const buffer = device.createBuffer({
+    size: data.byteLength,
+    usage: usage,
+    mappedAtCreation: mappedAtCreation,
+    label: label
+  });
+
+  // データがある場合はバッファにコピー
+  if (data) {
+    const bufferView = new (data.constructor)(buffer.getMappedRange());
+    bufferView.set(data);
+    buffer.unmap();
+  }
+
+  return buffer;
+}
+
 // アニメーションループのセットアップ
 export function setupAnimationLoop(callback) {
   function animate(currentTime) {

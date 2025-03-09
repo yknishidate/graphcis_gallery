@@ -1,11 +1,12 @@
 import { 
   initWebGPU, 
   loadShader, 
+  createBufferFromData,
   createShaderModule,
   setupResizeObserver, 
   displayError, 
   setupAnimationLoop,
-  ShapeRenderer
+  ShapeRenderer,
 } from './webgpu-utils.js';
 
 // メイン関数
@@ -35,40 +36,21 @@ export async function initCirclesDemo(canvasId) {
       }
     });
 
-    // centers用のバッファを作成
-    const centersBuffer = device.createBuffer({
-      size: numCircles * 2 * 4, // vec2f * numCircles
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true
-    });
+    // centersDataの作成
     const centersData = new Float32Array(numCircles * 2);
     for (let i = 0; i < numCircles; i++) {
       centersData[i * 2] = Math.random() * 2 - 1;     // x position
       centersData[i * 2 + 1] = Math.random() * 2 - 1; // y position
     }
-    new Float32Array(centersBuffer.getMappedRange()).set(centersData);
-    centersBuffer.unmap();
-
-    // velocity用のバッファを作成
-    const velocityBuffer = device.createBuffer({
-      size: numCircles * 2 * 4, // vec2f * numCircles
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true
-    });
+    
+    // velocityDataの作成
     const velocityData = new Float32Array(numCircles * 2);
     for (let i = 0; i < numCircles; i++) {
       velocityData[i * 2 + 0] = (Math.random() - 0.5); // x velocity
       velocityData[i * 2 + 1] = (Math.random() - 0.5); // y velocity
     }
-    new Float32Array(velocityBuffer.getMappedRange()).set(velocityData);
-    velocityBuffer.unmap();
-
-    // colors用のバッファを作成
-    const colorsBuffer = device.createBuffer({
-      size: numCircles * 4 * 4, // vec4f * numCircles
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true
-    });
+    
+    // colorsDataの作成
     const colorsData = new Float32Array(numCircles * 4);
     for (let i = 0; i < numCircles; i++) {
       colorsData[i * 4 + 0] = Math.random() * 0.5 + 0.5; // r
@@ -76,8 +58,11 @@ export async function initCirclesDemo(canvasId) {
       colorsData[i * 4 + 2] = Math.random() * 0.5 + 0.5; // b
       colorsData[i * 4 + 3] = 1.0;                       // a
     }
-    new Float32Array(colorsBuffer.getMappedRange()).set(colorsData);
-    colorsBuffer.unmap();
+
+    // バッファの作成
+    const centersBuffer = createBufferFromData(device, centersData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+    const velocityBuffer = createBufferFromData(device, velocityData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+    const colorsBuffer = createBufferFromData(device, colorsData, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
 
     // uniformバッファの作成
     const uniformBuffer = device.createBuffer({
