@@ -1,5 +1,4 @@
 import { 
-  initWebGPU, 
   loadShader, 
   createBufferFromData,
   createShaderModule,
@@ -9,10 +8,7 @@ import {
 } from './webgpu-utils.js';
 
 // メイン関数
-export async function initCirclesDemo(canvas) {
-  // WebGPUの初期化
-  const { device, context, format } = await initWebGPU(canvas);
-
+export async function initCirclesDemo(device, context, canvas, format) {
   const numCircles = 256;
   const circleRadius = 0.025; // 正規化された座標系での半径
 

@@ -1,19 +1,13 @@
 import { 
-  initWebGPU, 
   loadShader, 
   createShaderModule, 
   beginRenderPass, 
   submitCommands 
 } from './webgpu-utils.js';
 
-export async function initTriangleDemo(canvas) {
-  // WebGPUの初期化
-  const { device, context, format } = await initWebGPU(canvas);
-
+export async function initTriangleDemo(device, context, canvas, format) {
   // シェーダーファイルの読み込み
   const shader = await loadShader('/shaders/triangle.wgsl');
-
-  // シェーダーモジュールの作成
   const shaderModule = createShaderModule(device, shader);
 
   // レンダリングパイプラインの作成

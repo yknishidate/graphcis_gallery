@@ -175,34 +175,6 @@ export class TextureRenderer {
   }
 }
 
-// WebGPUデバイスの初期化
-export async function initWebGPU(canvas) {
-  // WebGPUがサポートされているか確認
-  if (!navigator.gpu) {
-    throw new Error('WebGPUはこのブラウザでサポートされていません。');
-  }
-
-  // アダプタの要求
-  const adapter = await navigator.gpu.requestAdapter();
-  if (!adapter) {
-    throw new Error('WebGPUアダプタが見つかりません。');
-  }
-
-  // デバイスの要求
-  const device = await adapter.requestDevice();
-
-  // キャンバスのコンテキストを設定
-  const context = canvas.getContext('webgpu');
-  const format = navigator.gpu.getPreferredCanvasFormat();
-  context.configure({
-    device,
-    format,
-    alphaMode: 'premultiplied',
-  });
-
-  return { device, context, format };
-}
-
 // シェーダーファイルの読み込み
 export async function loadShader(path) {
   const response = await fetch(path);

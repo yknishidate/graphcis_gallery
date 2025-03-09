@@ -1,5 +1,4 @@
 import { 
-  initWebGPU, 
   loadShader, 
   createShaderModule, 
   submitCommands,
@@ -7,10 +6,7 @@ import {
   TextureRenderer
 } from './webgpu-utils.js';
 
-export async function initGradientDemo(canvas) {
-  // WebGPUの初期化
-  const { device, context, format } = await initWebGPU(canvas);
-
+export async function initGradientDemo(device, context, canvas, format) {
   // フルスクリーン描画用のレンダラーを作成
   const textureRenderer = new TextureRenderer(device, format, canvas);
   
