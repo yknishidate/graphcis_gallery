@@ -1,0 +1,57 @@
+---
+import ProjectLayout from '../../components/ProjectLayout.astro';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+// シェーダファイルの読み込み
+const shaderPath = path.join(process.cwd(), 'public', 'shaders', 'circles.wgsl');
+const shaderCode = await fs.readFile(shaderPath, 'utf-8');
+const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/circles.js'), 'utf-8');
+
+// プロジェクト情報
+export const projectInfo = {
+  title: 'Circles Simulation',
+  description: 'A WebGPU demo simulating 1000 moving circles using compute and render shaders.',
+  script: '/src/projects/circles.js',
+  date: '2025-03-09',
+};
+
+// プロジェクトID
+const id = 'circles';
+---
+
+<ProjectLayout
+  title={projectInfo.title}
+  description={projectInfo.description}
+  id={id}
+  scriptPath={projectInfo.script}
+  codeBlocks={[
+    {
+      name: "Shader",
+      code: shaderCode,
+      language: "wgsl"
+    },
+    {
+      name: "Script",
+      code: scriptCode,
+      language: "javascript"
+    }
+  ]}
+>
+  <div class="info-section">
+    <h2>About This Demo</h2>
+    <div>
+      <p>
+        このデモは、WebGPUのコンピュートシェーダーとレンダーシェーダーを使用して、1000個の円を動的にシミュレーションします。
+      </p>
+      <ul>
+        <li><strong>コンピュートシェーダー</strong>: 各円の位置と速度を並列に更新</li>
+        <li><strong>インスタンシング描画</strong>: GPUの並列処理能力を活用して大量の円を効率的に描画</li>
+        <li><strong>境界線の跳ね返り</strong>: 円が画面の端に当たると速度を反転</li>
+      </ul>
+      <p>
+        デモでは、ランダムな初期位置と速度を持つ1000個の円を生成し、リアルタイムでその動きをシミュレーションします。
+      </p>
+    </div>
+  </div>
+</ProjectLayout>

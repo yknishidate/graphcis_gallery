@@ -130,6 +130,10 @@ async function initDemo() {
       await module.initTriangleDemo('webgpu-canvas');
     } else if (id === 'gradient') {
       await module.initGradientDemo('webgpu-canvas');
+    } else if (id === 'circles') {
+      await module.initCirclesDemo('webgpu-canvas');
+    } else {
+      throw new Error(`未知のプロジェクトID: ${id}`);
     }
   } catch (error) {
     console.error('デモの初期化エラー:', error);

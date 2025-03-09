@@ -262,3 +262,217 @@ export function setupAnimationLoop(callback) {
   
   requestAnimationFrame(animate);
 }
+
+// 形状インスタンス描画用のレンダラークラス
+export class ShapeRenderer {
+  #device;
+  #format;
+  #pipeline;
+  #bindGroupLayout;
+  #vertexBuffer;
+  #instanceBuffer;
+  #shapeType;
+
+  constructor(device, format, shapeType = 'circle') {
+    this.#device = device;
+    this.#format = format;
+    this.#shapeType = shapeType;
+
+    // 形状の頂点データを生成
+    const vertices = this.#generateShapeVertices(shapeType);
+    
+    // 頂点バッファの作成
+    this.#vertexBuffer = device.createBuffer({
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true
+    });
+    new Float32Array(this.#vertexBuffer.getMappedRange()).set(vertices);
+    this.#vertexBuffer.unmap();
+
+    // インスタンスバッファの初期化（後で更新可能）
+    this.#instanceBuffer = device.createBuffer({
+      size: 1024 * 4 * 4, // 初期サイズ（必要に応じて動的に拡張可能）
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+
+    // 頂点シェーダーコード
+    const vertexShaderCode = `
+    struct VertexInput {
+      @location(0) position: vec2f,
+    }
+
+    struct InstanceInput {
+      @location(1) center: vec2f,
+      @location(2) radius: f32,
+      @location(3) color: vec4f,
+    }
+
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) color: vec4f,
+    }
+
+    @vertex
+    fn main(
+      vertex: VertexInput, 
+      instance: InstanceInput
+    ) -> VertexOutput {
+      var output: VertexOutput;
+      
+      // インスタンスの位置とスケールを適用
+      let scaledPos = vertex.position * instance.radius;
+      let worldPos = scaledPos + instance.center;
+      
+      output.position = vec4f(worldPos, 0.0, 1.0);
+      output.color = instance.color;
+      
+      return output;
+    }
+    `;
+
+    // フラグメントシェーダーコード
+    const fragmentShaderCode = `
+    @fragment
+    fn main(input: VertexOutput) -> @location(0) vec4f {
+      return input.color;
+    }
+    `;
+
+    // シェーダーモジュールの作成
+    const vertexModule = createShaderModule(device, vertexShaderCode);
+    const fragmentModule = createShaderModule(device, fragmentShaderCode);
+
+    // レンダリングパイプラインの作成
+    this.#pipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: vertexModule,
+        entryPoint: 'main',
+        buffers: [
+          // 頂点バッファ
+          {
+            arrayStride: 2 * 4, // vec2f
+            attributes: [
+              {
+                shaderLocation: 0,
+                offset: 0,
+                format: 'float32x2',
+              }
+            ]
+          },
+          // インスタンスバッファ
+          {
+            arrayStride: 4 * 4 * 4, // vec2f + f32 + vec4f
+            stepMode: 'instance',
+            attributes: [
+              {
+                shaderLocation: 1,
+                offset: 0,
+                format: 'float32x2', // center
+              },
+              {
+                shaderLocation: 2,
+                offset: 2 * 4,
+                format: 'float32x2', // radius (変更: float32x1 -> float32x2)
+              },
+              {
+                shaderLocation: 3,
+                offset: 3 * 4,
+                format: 'float32x4', // color
+              }
+            ]
+          }
+        ]
+      },
+      fragment: {
+        module: fragmentModule,
+        entryPoint: 'main',
+        targets: [
+          {
+            format: format,
+          }
+        ]
+      },
+      primitive: {
+        topology: 'triangle-list',
+      }
+    });
+  }
+
+  // 形状の頂点データを生成
+  #generateShapeVertices(shapeType) {
+    switch(shapeType) {
+      case 'circle':
+        // 円のメッシュ（三角形ファン）
+        const circleVertices = [];
+        const numSegments = 32;
+        circleVertices.push(0, 0); // 中心点
+
+        for (let i = 0; i <= numSegments; i++) {
+          const angle = (i / numSegments) * Math.PI * 2;
+          circleVertices.push(
+            Math.cos(angle),
+            Math.sin(angle)
+          );
+        }
+
+        return new Float32Array(circleVertices);
+
+      case 'rectangle':
+        // 四角形の頂点
+        return new Float32Array([
+          -0.5, -0.5,  // 左下
+           0.5, -0.5,  // 右下
+           0.5,  0.5,  // 右上
+          -0.5,  0.5,  // 左上
+          -0.5, -0.5,  // 左下（最初の点に戻る）
+           0.5,  0.5   // 右上（三角形を作る）
+        ]);
+
+      case 'line':
+        // 線分
+        return new Float32Array([
+          0, 0,  // 開始点
+          1, 0   // 終了点
+        ]);
+
+      default:
+        throw new Error(`サポートされていない形状: ${shapeType}`);
+    }
+  }
+
+  // インスタンスデータの更新
+  updateInstances(instances) {
+    // インスタンスデータをバッファに書き込む
+    this.#device.queue.writeBuffer(
+      this.#instanceBuffer, 
+      0, 
+      new Float32Array(instances.flatMap(instance => [
+        instance.center[0], instance.center[1], // x, y
+        instance.radius || 1.0, 0, // radius (float32x2に変更)
+        instance.color[0], instance.color[1], instance.color[2], instance.color[3] // color
+      ]))
+    );
+  }
+
+  // 描画メソッド
+  render(renderPass, instanceCount) {
+    renderPass.setPipeline(this.#pipeline);
+    renderPass.setVertexBuffer(0, this.#vertexBuffer);
+    renderPass.setVertexBuffer(1, this.#instanceBuffer);
+    
+    // 形状に応じて描画コマンドを変更
+    switch(this.#shapeType) {
+      case 'circle':
+        renderPass.draw(34, instanceCount, 0, 0); // 32セグメント + 中心点 + 最後の点
+        break;
+      case 'rectangle':
+        renderPass.draw(6, instanceCount, 0, 0);
+        break;
+      case 'line':
+        renderPass.draw(2, instanceCount, 0, 0);
+        break;
+    }
+  }
+}
