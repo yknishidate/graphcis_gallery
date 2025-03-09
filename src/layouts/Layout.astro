@@ -140,6 +140,49 @@
 		height: auto;
 	}
 
+    /* 既存のスタイルに追加 */
+    .code-tabs {
+        background-color: rgba(30, 30, 40, 0.7);
+        border-radius: 8px;
+    }
+
+    .tab-buttons {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-button {
+        padding: 0.75rem 1.5rem;
+        background: none;
+        border: none;
+        color: #a0a0b0;
+        cursor: pointer;
+        transition: color 0.3s ease;
+        font-weight: 500;
+    }
+
+    .tab-button.active {
+        color: var(--accent-color);
+        border-bottom: 2px solid var(--accent-color);
+    }
+
+    .tab-button:hover {
+        color: var(--text-color);
+    }
+
+    .tab-content {
+        position: relative;
+    }
+
+    .tab-pane {
+        display: none;
+        padding: 1rem;
+    }
+
+    .tab-pane.active {
+        display: block;
+    }
+
 	@media (max-width: 768px) {
 		header .container {
 			flex-direction: column;

@@ -1,16 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-// @ts-ignore
-import fs from 'fs';
-// @ts-ignore
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 // シェーダファイルの読み込み
-// @ts-ignore
 const shaderPath = path.join(process.cwd(), 'public', 'shaders', 'triangle.wgsl');
-
-// @ts-ignore
-const shader = fs.readFileSync(shaderPath, 'utf-8');
+const shader = await fs.readFile(shaderPath, 'utf-8');
+const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/triangle.js'), 'utf-8');
 
 // プロジェクト情報
 const projectInfo = {
@@ -57,10 +53,18 @@ const id = 'triangle';
 
     <div class="code-section">
       <h2>コードの解説</h2>
-      <div>
-        <h3>シェーダー</h3>
-        <div class="code-block">
-          <pre><code class="language-wgsl">{shader}</code></pre>
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-button active" data-tab="shader">シェーダー</button>
+          <button class="tab-button" data-tab="script">スクリプト</button>
+        </div>
+        <div class="tab-content">
+          <div class="tab-pane active" id="shader">
+            <pre><code class="language-wgsl">{shader}</code></pre>
+          </div>
+          <div class="tab-pane" id="script">
+            <pre><code class="language-javascript">{scriptCode}</code></pre>
+          </div>
         </div>
       </div>
     </div>
@@ -83,9 +87,30 @@ const id = 'triangle';
     'punctuation': /[{}[\];(),.:]/
   };
   
-  // ページ読み込み時にPrism.jsを実行
+  // タブ切り替え処理
   document.addEventListener('DOMContentLoaded', () => {
     Prism.highlightAll();
+    
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // ボタンのアクティブ状態を切り替え
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // タブペインのアクティブ状態を切り替え
+        tabPanes.forEach(pane => {
+          pane.classList.remove('active');
+          if (pane.id === tabId) {
+            pane.classList.add('active');
+          }
+        });
+      });
+    });
   });
 </script>
 
