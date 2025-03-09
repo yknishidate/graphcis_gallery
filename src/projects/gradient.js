@@ -7,23 +7,14 @@ import {
   FullscreenQuadRenderer
 } from './webgpu-utils.js';
 
-// グローバル変数（リソース管理用）
 let timeBuffer;
 let computeShaderModule;
 let computePipeline;
-let bindGroupLayout;
 let outputTexture;
-let quadRenderer; // フルスクリーン描画用のレンダラー
+let quadRenderer;
 
 // Compute Shaderの実行とレンダリング
 async function runComputeShader(device, context, canvas, currentTime = 0) {
-  const format = context.getCurrentTexture().format;
-  
-  // 初期化（初回のみ実行）
-  if (!computeShaderModule) {
-    await initializeResources(device, format, canvas);
-  }
-
   // キャンバスサイズが変更された場合、出力テクスチャを再作成
   if (outputTexture.width !== canvas.width || outputTexture.height !== canvas.height) {
     updateCanvasResources(device, canvas);
@@ -35,10 +26,34 @@ async function runComputeShader(device, context, canvas, currentTime = 0) {
   const timeData = new Float32Array([currentTime]);
   device.queue.writeBuffer(timeBuffer, 0, timeData);
 
-  // コンピュートシェーダの実行とレンダリング
-  executeComputeAndRender(device, context);
+  // コマンドエンコーダの作成
+  const commandEncoder = device.createCommandEncoder();
+  
+  // コンピュートシェーダ用のバインドグループを作成
+  const computeBindGroup = device.createBindGroup({
+    layout: computePipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: outputTexture.createView() },
+      { binding: 1, resource: { buffer: timeBuffer} },
+    ],
+  });
 
-  return outputTexture;
+  // コンピュートパスの実行
+  const computePass = commandEncoder.beginComputePass();
+  computePass.setPipeline(computePipeline);
+  computePass.setBindGroup(0, computeBindGroup);
+  
+  // ワークグループ数の計算（8x8のワークグループサイズに基づく）
+  const workgroupCountX = Math.ceil(outputTexture.width / 8);
+  const workgroupCountY = Math.ceil(outputTexture.height / 8);
+  computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY);
+  computePass.end();
+  
+  // コマンドの実行
+  submitCommands(device, commandEncoder);
+  
+  // テクスチャをフルスクリーンで描画
+  quadRenderer.render(context, outputTexture);
 }
 
 // リソースの初期化
@@ -65,35 +80,9 @@ async function initializeResources(device, format, canvas) {
            GPUTextureUsage.COPY_SRC,
   });
   
-  // コンピュートシェーダ用のバインドグループレイアウトを作成
-  bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        storageTexture: {
-          access: 'write-only',
-          format: 'rgba8unorm',
-          viewDimension: '2d',
-        },
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: 'uniform',
-        },
-      },
-    ],
-  });
-  
   // コンピュートパイプラインを作成
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
   computePipeline = device.createComputePipeline({
-    layout: pipelineLayout,
+    layout: 'auto',
     compute: {
       module: computeShaderModule,
       entryPoint: 'main',
@@ -118,53 +107,14 @@ function updateCanvasResources(device, canvas) {
   });
 }
 
-// コンピュートシェーダの実行とレンダリング
-function executeComputeAndRender(device, context) {
-  // コマンドエンコーダの作成
-  const commandEncoder = device.createCommandEncoder();
-  
-  // コンピュートシェーダ用のバインドグループを作成
-  const computeBindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: outputTexture.createView(),
-      },
-      {
-        binding: 1,
-        resource: {
-          buffer: timeBuffer,
-        },
-      },
-    ],
-  });
-  
-  // コンピュートパスの実行
-  const computePass = commandEncoder.beginComputePass();
-  computePass.setPipeline(computePipeline);
-  computePass.setBindGroup(0, computeBindGroup);
-  
-  // ワークグループ数の計算（8x8のワークグループサイズに基づく）
-  const workgroupCountX = Math.ceil(outputTexture.width / 8);
-  const workgroupCountY = Math.ceil(outputTexture.height / 8);
-  computePass.dispatchWorkgroups(workgroupCountX, workgroupCountY);
-  computePass.end();
-  
-  // コマンドの実行
-  submitCommands(device, commandEncoder);
-  
-  // テクスチャをフルスクリーンで描画（簡潔になったレンダリング処理）
-  quadRenderer.render(context, outputTexture);
-}
-
 // メイン関数
 export async function initGradientDemo(canvas) {
   // WebGPUの初期化
   const { device, context } = await initWebGPU(canvas);
 
-  // 初回のCompute Shader実行
-  await runComputeShader(device, context, canvas);
+  // 初期化
+  const format = context.getCurrentTexture().format;
+  await initializeResources(device, format, canvas);
 
   // アニメーションループのセットアップ
   setupAnimationLoop((currentTime) => {
