@@ -1,16 +1,29 @@
-// フルスクリーン四角形描画用のレンダラークラス
-export class FullscreenQuadRenderer {
+export class TextureRenderer {
   // プライベート変数
   #device;
-  #format;
+  #canvas;
   #pipeline;
   #bindGroupLayout;
   #sampler;
+  #uniformBuffer;
   
   // コンストラクタ
   constructor(device, format, canvas) {
     this.#device = device;
-    this.#format = format;
+    this.#canvas = canvas;
+    
+    // uniformバッファの作成
+    this.#uniformBuffer = device.createBuffer({
+      size: 8, // vec2f (width, height)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // 初期キャンバスサイズをuniformバッファに書き込む
+    device.queue.writeBuffer(
+      this.#uniformBuffer, 
+      0, 
+      new Float32Array([canvas.width, canvas.height])
+    );
     
     // 頂点シェーダコード
     const vertexShaderCode = `
@@ -31,12 +44,21 @@ export class FullscreenQuadRenderer {
     
     // フラグメントシェーダコード
     const fragmentShaderCode = `
+    struct CanvasSize {
+      width: f32,
+      height: f32,
+    }
+
     @group(0) @binding(0) var textureSampler: sampler;
     @group(0) @binding(1) var textureData: texture_2d<f32>;
+    @group(0) @binding(2) var<uniform> canvasSize: CanvasSize;
 
     @fragment
     fn main(@builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
-      let texCoord = vec2f(fragCoord.x / ${canvas.width}.0, 1.0 - fragCoord.y / ${canvas.height}.0);
+      let texCoord = vec2f(
+        fragCoord.x / canvasSize.width, 
+        1.0 - fragCoord.y / canvasSize.height
+      );
       return textureSample(textureData, textureSampler, texCoord);
     }
     `;
@@ -64,6 +86,13 @@ export class FullscreenQuadRenderer {
           visibility: GPUShaderStage.FRAGMENT,
           texture: {},
         },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: {
+            type: 'uniform'
+          }
+        }
       ],
     });
     
@@ -91,17 +120,15 @@ export class FullscreenQuadRenderer {
     });
   }
   
-  // キャンバスサイズが変更された場合に再初期化
-  resize(canvas) {
-    // 新しいレンダラーを作成して内部状態を更新
-    const newRenderer = new FullscreenQuadRenderer(this.#device, this.#format, canvas);
-    this.#pipeline = newRenderer.#pipeline;
-    this.#bindGroupLayout = newRenderer.#bindGroupLayout;
-    this.#sampler = newRenderer.#sampler;
-  }
-  
   // テクスチャをフルスクリーンで描画
   render(context, texture, clearColor = { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }) {
+    // キャンバスサイズをuniformバッファに書き込む
+    this.#device.queue.writeBuffer(
+      this.#uniformBuffer, 
+      0, 
+      new Float32Array([this.#canvas.width, this.#canvas.height])
+    );
+
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
     
@@ -117,6 +144,10 @@ export class FullscreenQuadRenderer {
           binding: 1,
           resource: texture.createView(),
         },
+        {
+          binding: 2,
+          resource: { buffer: this.#uniformBuffer }
+        }
       ],
     });
     

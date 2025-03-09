@@ -4,22 +4,20 @@ import {
   createShaderModule, 
   submitCommands,
   setupAnimationLoop,
-  FullscreenQuadRenderer
+  TextureRenderer
 } from './webgpu-utils.js';
 
 let timeBuffer;
 let computeShaderModule;
 let computePipeline;
 let outputTexture;
-let quadRenderer;
+let textureRenderer;
 
 // Compute Shaderの実行とレンダリング
 async function runComputeShader(device, context, canvas, currentTime = 0) {
   // キャンバスサイズが変更された場合、出力テクスチャを再作成
   if (outputTexture.width !== canvas.width || outputTexture.height !== canvas.height) {
     updateCanvasResources(device, canvas);
-    // レンダラーのリサイズ
-    quadRenderer.resize(canvas);
   }
 
   // 時間値を更新
@@ -53,7 +51,7 @@ async function runComputeShader(device, context, canvas, currentTime = 0) {
   submitCommands(device, commandEncoder);
   
   // テクスチャをフルスクリーンで描画
-  quadRenderer.render(context, outputTexture);
+  textureRenderer.render(context, outputTexture);
 }
 
 // リソースの初期化
@@ -63,7 +61,7 @@ async function initializeResources(device, format, canvas) {
   computeShaderModule = createShaderModule(device, computeShaderCode);
   
   // フルスクリーン描画用のレンダラーを作成
-  quadRenderer = new FullscreenQuadRenderer(device, format, canvas);
+  textureRenderer = new TextureRenderer(device, format, canvas);
   
   // 時間用のユニフォームバッファを作成
   timeBuffer = device.createBuffer({
@@ -110,10 +108,8 @@ function updateCanvasResources(device, canvas) {
 // メイン関数
 export async function initGradientDemo(canvas) {
   // WebGPUの初期化
-  const { device, context } = await initWebGPU(canvas);
+  const { device, context, format } = await initWebGPU(canvas);
 
-  // 初期化
-  const format = context.getCurrentTexture().format;
   await initializeResources(device, format, canvas);
 
   // アニメーションループのセットアップ
