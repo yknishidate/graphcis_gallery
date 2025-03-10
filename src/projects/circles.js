@@ -10,7 +10,7 @@ import {
 // メイン関数
 export async function initCirclesDemo(device, context, canvas, format) {
   // シェーダーの読み込み
-  const shaderCode = await loadShader('/graphics_gallery/shaders/circles.wgsl');
+  const shaderCode = await loadShader(`${import.meta.env.BASE_URL}/shaders/circles.wgsl`);
   const shaderModule = createShaderModule(device, shaderCode);
   
   // コンピュートパイプラインの作成
