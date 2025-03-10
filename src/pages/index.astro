@@ -31,7 +31,7 @@ const projects = await Promise.all(
     return {
       ...projectInfo,
       id,
-      thumbnail: `/images/${id}-thumbnail.png`
+      thumbnail: `./images/${id}-thumbnail.png`
     };
   })
 );
@@ -59,7 +59,7 @@ projects.sort((a, b) => {
             title={project.title}
             description={project.description}
             thumbnail={project.thumbnail}
-            url={`/projects/${project.id}`}
+            url={`./projects/${project.id}`}
           />
         ))}
       </div>
