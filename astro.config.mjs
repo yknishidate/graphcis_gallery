@@ -5,6 +5,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://yknishidate.github.io',
   base: '/graphics_gallery',
+  trailingSlash: "never",
   devToolbar: {
     enabled: false
   }

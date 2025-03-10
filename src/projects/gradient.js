@@ -26,7 +26,7 @@ export async function initGradientDemo(device, context, canvas, format) {
   });
   
   // コンピュートシェーダの読み込み
-  const computeShaderCode = await loadShader('/shaders/gradient.wgsl');
+  const computeShaderCode = await loadShader('/graphics_gallery/shaders/gradient.wgsl');
   const computeShaderModule = createShaderModule(device, computeShaderCode);
   
   // コンピュートパイプラインを作成
