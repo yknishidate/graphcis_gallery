@@ -1,16 +1,15 @@
 import { 
-  loadShader, 
   createBufferFromData,
   createShaderModule,
   setupResizeObserver, 
   setupAnimationLoop,
   ShapeRenderer,
 } from './webgpu-utils.js';
+import shaderCode from './shaders/circles.wgsl?raw';
 
 // メイン関数
 export async function initCirclesDemo(device, context, canvas, format) {
   // シェーダーの読み込み
-  const shaderCode = await loadShader(`${import.meta.env.BASE_URL}/shaders/circles.wgsl`);
   const shaderModule = createShaderModule(device, shaderCode);
   
   // コンピュートパイプラインの作成

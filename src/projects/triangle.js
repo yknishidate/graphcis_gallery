@@ -1,14 +1,13 @@
 import { 
-  loadShader, 
   createShaderModule, 
   beginRenderPass, 
   submitCommands 
 } from './webgpu-utils.js';
+import shaderCode from './shaders/triangle.wgsl?raw';
 
 export async function initTriangleDemo(device, context, canvas, format) {
   // シェーダーファイルの読み込み
-  const shader = await loadShader(`${import.meta.env.BASE_URL}/shaders/triangle.wgsl`);
-  const shaderModule = createShaderModule(device, shader);
+  const shaderModule = createShaderModule(device, shaderCode);
 
   // レンダリングパイプラインの作成
   const pipeline = device.createRenderPipeline({

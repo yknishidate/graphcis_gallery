@@ -175,15 +175,6 @@ export class TextureRenderer {
   }
 }
 
-// シェーダーファイルの読み込み
-export async function loadShader(path) {
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`シェーダーファイル ${path} の読み込みに失敗しました。`);
-  }
-  return await response.text();
-}
-
 // シェーダーモジュールの作成
 export function createShaderModule(device, code) {
   return device.createShaderModule({
