@@ -6,7 +6,7 @@ import path from 'node:path';
 // シェーダファイルの読み込み
 const shaderPath = path.join(process.cwd(), 'public', 'shaders', 'gradient.wgsl');
 const shaderCode = await fs.readFile(shaderPath, 'utf-8');
-const scriptCode = await fs.readFile(path.join(process.cwd(), 'src/projects/gradient.js'), 'utf-8');
+const scriptCode = await import('../../projects/gradient.js?raw').then(module => module.default);
 
 // プロジェクト情報
 export const projectInfo = {
