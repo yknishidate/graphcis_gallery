@@ -1,20 +1,7 @@
 ---
 import ProjectLayout from '../../components/ProjectLayout.astro';
-import fs from 'node:fs/promises';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// 現在の .astro ファイルのパスを取得
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// シェーダファイルの読み込み
-const shaderPath = join(__dirname, '../../../public/shaders/triangle.wgsl');
-const shaderCode = await fs.readFile(shaderPath, 'utf-8');
-
-// スクリプトの読み込み
-const scriptPath = join(__dirname, '../../../src/projects/triangle.js');
-const scriptCode = await fs.readFile(scriptPath, 'utf-8');
+import shaderCode from '/shaders/triangle.wgsl?url&raw';
+import scriptCode from '../../projects/triangle.js?raw';
 
 // プロジェクト情報
 export const projectInfo = {
