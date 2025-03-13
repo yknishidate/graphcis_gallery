@@ -171,7 +171,7 @@ export class TextureRenderer {
     renderPass.end();
     
     // コマンドの実行
-    submitCommands(this.#device, commandEncoder);
+    this.#device.queue.submit([commandEncoder.finish()]);
   }
 }
 
@@ -237,12 +237,6 @@ export function beginRenderPass(device, context, clearColor = { r: 0.1, g: 0.1, 
     commandEncoder, 
     renderPass: commandEncoder.beginRenderPass(renderPassDescriptor) 
   };
-}
-
-// コマンドの実行
-export function submitCommands(device, commandEncoder) {
-  const commandBuffer = commandEncoder.finish();
-  device.queue.submit([commandBuffer]);
 }
 
 // バッファ作成のユーティリティ関数
