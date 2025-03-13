@@ -534,3 +534,48 @@ export class ShapeRenderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 }
+
+export async function initDemo(demoInitFunction) {
+  try {
+    const canvas = document.getElementById('webgpu-canvas');
+    if (!canvas) {
+      throw new Error('キャンバス要素が見つかりません。');
+    }
+
+    const demoContainer = document.querySelector('.demo-container');
+    canvas.width = demoContainer.clientWidth;
+    canvas.height = 400;
+
+    if (!navigator.gpu) {
+      throw new Error('WebGPUはこのブラウザでサポートされていません。Chrome 113以降またはその他の対応ブラウザをお使いください。');
+    }
+
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      throw new Error('WebGPUアダプタが見つかりません。');
+    }
+
+    const device = await adapter.requestDevice();
+
+    const context = canvas.getContext('webgpu');
+    const format = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({
+      device,
+      format,
+      alphaMode: 'premultiplied',
+    });
+
+    // ここで渡されたデモ初期化関数を呼び出す
+    await demoInitFunction(device, context, canvas, format);
+
+  } catch (error) {
+    console.error('エラー:', error);
+
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = `エラー: ${error.message}`;
+    errorElement.style.display = 'block';
+
+    const canvas = document.getElementById('webgpu-canvas');
+    canvas.style.display = 'none';
+  }
+}
