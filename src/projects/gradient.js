@@ -17,7 +17,7 @@ export async function initGradientDemo(device, context, canvas, format) {
   });
   
   // 出力テクスチャを作成
-  const outputTexture = device.createTexture({
+  let outputTexture = device.createTexture({
     size: [canvas.width, canvas.height],
     format: 'rgba8unorm',
     usage: GPUTextureUsage.STORAGE_BINDING | 

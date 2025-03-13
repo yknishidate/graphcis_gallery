@@ -12,12 +12,10 @@ export interface CodeBlock {
 export interface Props {
   title: string;
   description: string;
-  id: string;
-  scriptPath: string;
   codeBlocks: CodeBlock[];  // 複数のコードブロックを許可
 }
 
-const { title, description, id, scriptPath, codeBlocks } = Astro.props;
+const { title, description, codeBlocks } = Astro.props;
 ---
 
 <Layout>
@@ -104,79 +102,6 @@ const { title, description, id, scriptPath, codeBlocks } = Astro.props;
       });
     });
   });
-</script>
-
-<script define:vars={{ id, scriptPath }}>
-// WebGPUデモの初期化
-async function initDemo() {
-  try {
-    const canvas = document.getElementById('webgpu-canvas');
-    if (!canvas) {
-      throw new Error('キャンバス要素が見つかりません。');
-    }
-    
-    // キャンバスのサイズを設定
-    const demoContainer = document.querySelector('.demo-container');
-    canvas.width = demoContainer.clientWidth;
-    canvas.height = 400;
-
-    // WebGPUのサポートチェック
-    if (!navigator.gpu) {
-      throw new Error('WebGPUはこのブラウザでサポートされていません。Chrome 113以降またはその他の対応ブラウザをお使いください。');
-    }
-
-    // プロジェクト固有のスクリプトを動的にインポート
-    const module = await import(scriptPath);
-    
-    // WebGPUがサポートされているか確認
-    if (!navigator.gpu) {
-      throw new Error('WebGPUはこのブラウザでサポートされていません。');
-    }
-    
-    // アダプタの要求
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-      throw new Error('WebGPUアダプタが見つかりません。');
-    }
-    
-    // デバイスの要求
-    const device = await adapter.requestDevice();
-    
-    // キャンバスのコンテキストを設定
-    const context = canvas.getContext('webgpu');
-    const format = navigator.gpu.getPreferredCanvasFormat();
-    context.configure({
-      device,
-      format,
-      alphaMode: 'premultiplied',
-    });
-    
-    // プロジェクトIDに基づいて適切な初期化関数を呼び出す
-    if (id === 'triangle') {
-      await module.initTriangleDemo(device, context, canvas, format);
-    } else if (id === 'gradient') {
-      await module.initGradientDemo(device, context, canvas, format);
-    } else if (id === 'circles') {
-      await module.initCirclesDemo(device, context, canvas, format);
-    } else {
-      throw new Error(`未知のプロジェクトID: ${id}`);
-    }
-  } catch (error) {
-    console.error('エラー:', error);
-    
-    // エラーメッセージを表示
-    const errorElement = document.getElementById('error-message');
-    errorElement.textContent = `エラー: ${error.message}`;
-    errorElement.style.display = 'block';
-    
-    // キャンバスを非表示
-    const canvas = document.getElementById('webgpu-canvas');
-    canvas.style.display = 'none';
-  }
-}
-
-// ページ読み込み時にデモを初期化
-document.addEventListener('DOMContentLoaded', initDemo);
 </script>
 
 <style>
