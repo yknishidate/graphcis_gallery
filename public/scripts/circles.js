@@ -5,12 +5,12 @@ import {
   setupAnimationLoop,
   ShapeRenderer,
 } from './webgpu-utils.js';
-import shaderCode from './shaders/circles.wgsl?raw';
+// import shaderCode from '../shaders/circles.wgsl?raw';
 
 // メイン関数
 export async function initCirclesDemo(device, context, canvas, format) {
   // シェーダーの読み込み
-  const shaderModule = createShaderModule(device, shaderCode);
+  const shaderModule = createShaderModule(device, '');
   
   // コンピュートパイプラインの作成
   const computePipeline = device.createComputePipeline({
