@@ -7,7 +7,7 @@ import scriptCode from '../../../public/scripts/triangle.js?raw';
 export const projectInfo = {
   title: 'Basic Triangle',
   description: 'A simple demo that draws a basic triangle using WebGPU. Learn the basics of vertex and fragment shaders.',
-  script: '/src/projects/triangle.js',
+  script: '/graphics_gallery/scripts/triangle.js',
   date: '2025-03-07',
 };
 
@@ -15,7 +15,7 @@ export const projectInfo = {
 const id = 'triangle';
 ---
 
-<script type="module" src=`/graphics_gallery/scripts/triangle.js`></script>
+<script type="module" src={projectInfo.script}></script>
 
 <ProjectLayout
   title={projectInfo.title}

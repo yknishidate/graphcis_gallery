@@ -1,14 +1,11 @@
-import { 
-  createShaderModule, 
-  initDemo
-} from './webgpu-utils.js';
+import { createDefaultRenderPassDescriptor, initDemo } from './webgpu-utils.js';
 
 document.addEventListener('DOMContentLoaded', () => initDemo(
   async (device, context, canvas, format) => {
     // シェーダーファイルの読み込み
     const response = await fetch(`/graphics_gallery/shaders/triangle.wgsl`);
     const shaderCode = await response.text();
-    const shaderModule = createShaderModule(device, shaderCode);
+    const shaderModule = device.createShaderModule({ code: shaderCode });
 
     // レンダリングパイプラインの作成
     const pipeline = device.createRenderPipeline({
@@ -33,16 +30,8 @@ document.addEventListener('DOMContentLoaded', () => initDemo(
 
     // レンダーパスの開始
     const commandEncoder = device.createCommandEncoder();
-    const renderPass = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: context.getCurrentTexture().createView(),
-          clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-    });
+    const renderPassDescriptor = createDefaultRenderPassDescriptor(context);
+    const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
     renderPass.setPipeline(pipeline);
     renderPass.draw(3); // 3頂点で三角形を描画
     renderPass.end();

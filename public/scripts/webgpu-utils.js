@@ -64,8 +64,12 @@ export class TextureRenderer {
     `;
     
     // シェーダーモジュールを作成
-    const vertexModule = createShaderModule(device, vertexShaderCode);
-    const fragmentModule = createShaderModule(device, fragmentShaderCode);
+    const vertexModule = device.createShaderModule({
+      code: vertexShaderCode,
+    });
+    const fragmentModule = device.createShaderModule({
+      code: fragmentShaderCode,
+    });
     
     // サンプラーを作成
     this.#sampler = device.createSampler({
@@ -175,13 +179,6 @@ export class TextureRenderer {
   }
 }
 
-// シェーダーモジュールの作成
-export function createShaderModule(device, code) {
-  return device.createShaderModule({
-    code: code,
-  });
-}
-
 // キャンバスリサイズ処理のセットアップ
 export function setupResizeObserver(canvas, device, onResize) {
   const observer = new ResizeObserver(entries => {
@@ -216,6 +213,19 @@ export function displayError(canvas, errorMessage) {
   ctx.fillStyle = '#ff6b6b';
   ctx.textAlign = 'center';
   ctx.fillText('WebGPUエラー: ' + errorMessage, canvas.width / 2, canvas.height / 2);
+}
+
+export function createDefaultRenderPassDescriptor(context, clearColor = { r: 0.1, g: 0.1, b: 0.15, a: 1.0 }) {
+  return {
+    colorAttachments: [
+      {
+        view: context.getCurrentTexture().createView(),
+        clearValue: clearColor,
+        loadOp: 'clear',
+        storeOp: 'store',
+      },
+    ],
+  };
 }
 
 // レンダーパスの開始
@@ -374,8 +384,8 @@ export class ShapeRenderer {
     `;
 
     // シェーダーモジュールの作成
-    const vertexModule = createShaderModule(device, vertexShaderCode);
-    const fragmentModule = createShaderModule(device, fragmentShaderCode);
+    const vertexModule = device.createShaderModule({ code: vertexShaderCode });
+    const fragmentModule = device.createShaderModule({ code: fragmentShaderCode });
 
     // レンダリングパイプラインの作成
     this.#pipeline = device.createRenderPipeline({

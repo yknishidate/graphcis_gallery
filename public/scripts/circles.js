@@ -1,6 +1,5 @@
 import { 
   createBufferFromData,
-  createShaderModule,
   setupResizeObserver, 
   setupAnimationLoop,
   ShapeRenderer,
@@ -13,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => initDemo(
     // シェーダーの読み込み
     const response = await fetch(`/graphics_gallery/shaders/circles.wgsl`);
     const shaderCode = await response.text();
-    const shaderModule = createShaderModule(device, shaderCode);
+    const shaderModule = device.createShaderModule({ code: shaderCode });
     
     // コンピュートパイプラインの作成
     const computePipeline = device.createComputePipeline({

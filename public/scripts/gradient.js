@@ -1,5 +1,4 @@
 import { 
-  createShaderModule, 
   setupAnimationLoop,
   TextureRenderer,
   initDemo
@@ -29,13 +28,13 @@ document.addEventListener('DOMContentLoaded', () => initDemo(
     // コンピュートシェーダの読み込み
     const response = await fetch(`/graphics_gallery/shaders/gradient.wgsl`);
     const shaderCode = await response.text();
-    const computeShaderModule = createShaderModule(device, shaderCode);
-    
+    const shaderModule = device.createShaderModule({ code: shaderCode });
+
     // コンピュートパイプラインを作成
     const computePipeline = device.createComputePipeline({
       layout: 'auto',
       compute: {
-        module: computeShaderModule,
+        module: shaderModule,
         entryPoint: 'main',
       },
     });

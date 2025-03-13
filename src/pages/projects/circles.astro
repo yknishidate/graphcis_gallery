@@ -7,7 +7,7 @@ import scriptCode from '../../../public/scripts/circles.js?raw';
 export const projectInfo = {
   title: 'Circles Simulation',
   description: 'A WebGPU demo simulating 1000 moving circles using compute and render shaders.',
-  script: '/src/projects/circles.js',
+  script: '/graphics_gallery/scripts/circles.js',
   date: '2025-03-09',
 };
 
@@ -15,7 +15,7 @@ export const projectInfo = {
 const id = 'circles';
 ---
 
-<script type="module" src=`/graphics_gallery/scripts/circles.js`></script>
+<script type="module" src={projectInfo.script}></script>
 
 <ProjectLayout
   title={projectInfo.title}
