@@ -1,0 +1,34 @@
+---
+import ProjectLayout from '../../components/ProjectLayout.astro';
+import scriptCode from '../../../public/scripts/shape_renderer.js?raw';
+
+// プロジェクト情報
+export const projectInfo = {
+  title: 'Shape Renderer',
+  description: '...',
+  script: '/graphics_gallery/scripts/shape_renderer.js',
+  date: '2025-03-13',
+};
+---
+
+<ProjectLayout
+  title={projectInfo.title}
+  description={projectInfo.description}
+  scriptPath={projectInfo.script}
+  codeBlocks={[
+    {
+      name: "Script",
+      code: scriptCode,
+      language: "javascript"
+    }
+  ]}
+>
+  <div class="info-section">
+    <h2>About This Demo</h2>
+    <div>
+      <p>
+        CPUからGPUに図形のデータを転送し、GPUで描画するデモです。
+      </p>
+    </div>
+  </div>
+</ProjectLayout>
