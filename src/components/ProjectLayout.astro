@@ -23,7 +23,7 @@ const { title, description, codeBlocks } = Astro.props;
     <div class="project-header">
       <h1>{title}</h1>
       <p class="description">{description}</p>
-      <a href="/" class="back-link">Back to Home</a>
+      <a href=`${import.meta.env.BASE_URL}` class="back-link">Back to Home</a>
     </div>
 
     <div class="demo-container">
