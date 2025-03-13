@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
     await page.setViewport({ width: 800, height: 600 });
 
     // プロジェクトディレクトリのパス
-    const projectsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'src', 'projects');
+    const projectsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public', 'scripts');
 
     // プロジェクトファイルを取得
     const projectFiles = fs.readdirSync(projectsDir)
@@ -26,7 +26,7 @@ import { fileURLToPath } from 'url';
 
     // プロジェクトの配列を動的に生成
     const projects = projectFiles.map(project => ({
-      url: `http://${HOST}:${PORT}/projects/${project}`, 
+      url: `http://${HOST}:${PORT}/graphics_gallery/projects/${project}`, 
       outputFile: `public/images/${project}-thumbnail.png`
     }));
 
