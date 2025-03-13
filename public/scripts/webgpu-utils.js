@@ -519,7 +519,7 @@ export class ShapeRenderer {
       colorAttachments: [{
         view: this.#context.getCurrentTexture().createView(),
         clearValue: { r: 0.1, g: 0.1, b: 0.15, a: 1.0 },
-        loadOp: 'clear',
+        loadOp: 'load',
         storeOp: 'store'
       }]
     });
