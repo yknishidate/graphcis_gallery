@@ -472,12 +472,8 @@ export class ShapeRenderer {
     ]);
   }
 
-  // 円を描画するメソッド（単一色またはカラーバッファに対応）
-  // centersBuffer: インスタンスの中心座標を格納したバッファ
-  // radius: 円の半径
-  // color: 単一色([r, g, b, a])またはカラーバッファ
-  // instanceCount: 描画するインスタンス数
-  renderCircles(centersBuffer, radius, color, instanceCount) {
+  // 形状を描画する内部メソッド
+  #renderShapes(shapeType, centersBuffer, radius, color, instanceCount) {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
 
@@ -529,13 +525,24 @@ export class ShapeRenderer {
     });
 
     renderPass.setPipeline(this.#pipeline);
-    renderPass.setVertexBuffer(0, this.#vertexBuffers['circle']);
+    renderPass.setVertexBuffer(0, this.#vertexBuffers[shapeType]);
     renderPass.setBindGroup(0, bindGroup);
-    renderPass.draw(this.#numCircleSegments * 3, instanceCount, 0, 0);
+    const vertexCount = shapeType === 'circle' ? this.#numCircleSegments * 3 : 6;
+    renderPass.draw(vertexCount, instanceCount, 0, 0);
     renderPass.end();
 
     // コマンドの実行
     this.#device.queue.submit([commandEncoder.finish()]);
+  }
+
+  // 円を描画するメソッド
+  renderCircles(centersBuffer, radius, color, instanceCount) {
+    this.#renderShapes('circle', centersBuffer, radius, color, instanceCount);
+  }
+
+  // 四角形を描画するメソッド
+  renderRectangles(centersBuffer, size, color, instanceCount) {
+    this.#renderShapes('rectangle', centersBuffer, size, color, instanceCount);
   }
 }
 
