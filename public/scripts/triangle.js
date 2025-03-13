@@ -6,7 +6,7 @@ import {
 
 export async function initTriangleDemo(device, context, canvas, format) {
   // シェーダーファイルの読み込み
-  const response = await fetch(`../shaders/triangle.wgsl`);
+  const response = await fetch(`/graphics_gallery/shaders/triangle.wgsl`);
   const shaderCode = await response.text();
   const shaderModule = createShaderModule(device, shaderCode);
 
