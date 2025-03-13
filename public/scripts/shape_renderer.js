@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => initDemo(
 
       // 円と四角形を描画
       shapeRenderer.renderCircles(circleCentersBuffer, circleRadius, circleColorsBuffer, numCircles);
-      shapeRenderer.renderRectangles(rectangleCentersBuffer, rectangleSize, rectangleColorsBuffer, numRectangles);
+      shapeRenderer.renderRectangles(rectangleCentersBuffer, [0.1, 0.04], rectangleColorsBuffer, numRectangles);
     });
   }
 ));

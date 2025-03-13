@@ -307,8 +307,9 @@ export class ShapeRenderer {
     this.#vertexBuffers['rectangle'] = this.#createVertexBuffer(this.#generateRectangleVertices());
     this.#vertexBuffers['line'] = this.#createVertexBuffer(this.#generateLineVertices());
 
+    // uniformバッファの作成（16バイトアライメントを考慮）
     this.#uniformBuffer = this.#device.createBuffer({
-      size: 48, // vec4f (radius + color + useColorBuffer + aspectRatio)
+      size: 64, // vec2f(scale) + vec4f(color) + f32(useColorBuffer) + f32(aspectRatio) + vec2f(padding)
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
 
@@ -325,10 +326,11 @@ export class ShapeRenderer {
     }
 
     struct Uniforms {
-      radius: f32,
-      color: vec4f,
-      useColorBuffer: f32,
-      aspectRatio: f32,
+      scale: vec2f,     // 2次元スケール (16バイトアライメント)
+      color: vec4f,     // 色 (16バイトアライメント)
+      useColorBuffer: f32,  // カラーバッファ使用フラグ
+      aspectRatio: f32,    // アスペクト比
+      _padding: vec2f,     // パディング (16バイトアライメント用)
     }
 
     struct VertexOutput {
@@ -354,7 +356,7 @@ export class ShapeRenderer {
       }
       
       // インスタンスの位置とスケールを適用
-      let scaledPos = adjustedPos * uniforms.radius;
+      let scaledPos = adjustedPos * uniforms.scale;
       let worldPos = scaledPos + centers[instanceIndex];
       
       output.position = vec4f(worldPos, 0.0, 1.0);
@@ -473,7 +475,7 @@ export class ShapeRenderer {
   }
 
   // 形状を描画する内部メソッド
-  #renderShapes(shapeType, centersBuffer, radius, color, instanceCount) {
+  #renderShapes(shapeType, centersBuffer, scale, color, instanceCount) {
     // コマンドエンコーダの作成
     const commandEncoder = this.#device.createCommandEncoder();
 
@@ -484,13 +486,16 @@ export class ShapeRenderer {
     // カラーバッファかどうかを判定
     const isColorBuffer = color instanceof GPUBuffer;
 
-    // uniformバッファにデータを書き込む
+    // scaleが数値の場合は両方の軸に同じ値を設定
+    const scaleVec = typeof scale === 'number' ? [scale, scale] : scale;
+
+    // uniformバッファにデータを書き込む（16バイトアライメントを考慮）
     this.#device.queue.writeBuffer(
       this.#uniformBuffer, 
       0, 
       new Float32Array([
-        radius, 0, 0, 0,  // radius (vec4fの最初の要素)
-        isColorBuffer ? 1.0 : color[0],  // color
+        scaleVec[0], scaleVec[1], 0.0, 0.0,  // scale (vec2f + padding)
+        isColorBuffer ? 1.0 : color[0],       // color (vec4f)
         isColorBuffer ? 1.0 : color[1],
         isColorBuffer ? 1.0 : color[2],
         isColorBuffer ? 1.0 : color[3],
