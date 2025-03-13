@@ -2,9 +2,9 @@ import {
   createShaderModule, 
   submitCommands,
   setupAnimationLoop,
-  TextureRenderer
+  TextureRenderer,
+  initDemo
 } from './webgpu-utils.js';
-import shaderCode from './shaders/gradient.wgsl?raw';
 
 export async function initGradientDemo(device, context, canvas, format) {
   // テクスチャ描画用のレンダラーを作成
@@ -26,6 +26,8 @@ export async function initGradientDemo(device, context, canvas, format) {
   });
   
   // コンピュートシェーダの読み込み
+  const response = await fetch(`/graphics_gallery/shaders/gradient.wgsl`);
+  const shaderCode = await response.text();
   const computeShaderModule = createShaderModule(device, shaderCode);
   
   // コンピュートパイプラインを作成
@@ -83,3 +85,6 @@ export async function initGradientDemo(device, context, canvas, format) {
     textureRenderer.render(context, outputTexture);
   });
 }
+
+// ページ読み込み時にデモを初期化
+document.addEventListener('DOMContentLoaded', () => initDemo(initGradientDemo));

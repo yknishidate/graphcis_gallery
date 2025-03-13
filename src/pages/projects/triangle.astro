@@ -13,8 +13,9 @@ export const projectInfo = {
 
 // プロジェクトID
 const id = 'triangle';
-const extractedCode = scriptCode.split('async function initDemo()')[0].trim();
 ---
+
+<script type="module" src=`/graphics_gallery/scripts/triangle.js`></script>
 
 <ProjectLayout
   title={projectInfo.title}
@@ -27,7 +28,7 @@ const extractedCode = scriptCode.split('async function initDemo()')[0].trim();
     },
     {
       name: "Script",
-      code: extractedCode,
+      code: scriptCode,
       language: "javascript"
     }
   ]}
@@ -51,5 +52,3 @@ const extractedCode = scriptCode.split('async function initDemo()')[0].trim();
     </div>
   </div>
 </ProjectLayout>
-
-<script type="module" src=`/graphics_gallery/scripts/triangle.js`></script>

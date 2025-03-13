@@ -4,13 +4,15 @@ import {
   setupResizeObserver, 
   setupAnimationLoop,
   ShapeRenderer,
+  initDemo
 } from './webgpu-utils.js';
-// import shaderCode from '../shaders/circles.wgsl?raw';
 
 // メイン関数
 export async function initCirclesDemo(device, context, canvas, format) {
   // シェーダーの読み込み
-  const shaderModule = createShaderModule(device, '');
+  const response = await fetch(`/graphics_gallery/shaders/circles.wgsl`);
+  const shaderCode = await response.text();
+  const shaderModule = createShaderModule(device, shaderCode);
   
   // コンピュートパイプラインの作成
   const computePipeline = device.createComputePipeline({
@@ -90,3 +92,6 @@ export async function initCirclesDemo(device, context, canvas, format) {
     shapeRenderer.renderCircles(centersBuffer, circleRadius, colorsBuffer, numCircles);
   });
 }
+
+// ページ読み込み時にデモを初期化
+document.addEventListener('DOMContentLoaded', () => initDemo(initCirclesDemo));
