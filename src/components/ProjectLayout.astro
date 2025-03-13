@@ -12,10 +12,11 @@ export interface CodeBlock {
 export interface Props {
   title: string;
   description: string;
+  scriptPath: string;  // スクリプトのパス
   codeBlocks: CodeBlock[];  // 複数のコードブロックを許可
 }
 
-const { title, description, codeBlocks } = Astro.props;
+const { title, description, scriptPath, codeBlocks } = Astro.props;
 ---
 
 <Layout>
@@ -60,6 +61,8 @@ const { title, description, codeBlocks } = Astro.props;
     <slot />
   </div>
 </Layout>
+
+<script type="module" src={scriptPath}></script>
 
 <!-- Prism.jsのスタイルシートとスクリプトを読み込む -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />

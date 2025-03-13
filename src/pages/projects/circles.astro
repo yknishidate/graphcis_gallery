@@ -15,11 +15,10 @@ export const projectInfo = {
 const id = 'circles';
 ---
 
-<script type="module" src={projectInfo.script}></script>
-
 <ProjectLayout
   title={projectInfo.title}
   description={projectInfo.description}
+  scriptPath={projectInfo.script}
   codeBlocks={[
     {
       name: "Shader",
